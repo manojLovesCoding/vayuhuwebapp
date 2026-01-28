@@ -209,3 +209,10 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+{/* to test in localhost use this action 
+        action: () => 
+        window.open("/vtour/index.html", "_blank"), 
+      */}
