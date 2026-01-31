@@ -29,7 +29,7 @@ $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 // ------------------------------------
 // JWT Verification from HttpOnly Cookie
 // ------------------------------------
-$token = $_COOKIE['auth_token'] ?? null; // <-- Changed to read from cookie
+$token = $_COOKIE['auth_token'] ?? null;
 
 if (!$token) {
     http_response_code(401);
@@ -39,7 +39,12 @@ if (!$token) {
 
 try {
     $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
-    // Successfully verified. User ID from token can be accessed via $decoded->data->id
+    // User ID from token:
+    $user_id = $decoded->data->id ?? null;
+    if (!$user_id) {
+        echo json_encode(["success" => false, "message" => "Invalid user session"]);
+        exit;
+    }
 } catch (Exception $e) {
     http_response_code(401);
     echo json_encode(["success" => false, "message" => "Invalid or expired session. Please log in again."]);
@@ -88,7 +93,6 @@ function val($arr, $key) {
 }
 
 $coupon_code     = val($input, "coupon_code");
-$user_id         = val($input, "user_id");
 $workspace_title = val($input, "workspace_title");
 $plan_type       = val($input, "plan_type");
 $total_amount    = floatval(val($input, "total_amount"));
@@ -175,8 +179,11 @@ if ($normalized_pack !== "all" && $normalized_pack !== $normalized_plan) {
 
 // ------------------------------------
 // User Type Validation (optional)
-# Particular User (Email or Mobile)
-if (trim($coupon["user_type"]) === "Particular User (Email)" && !empty($coupon["email"])) {
+// ------------------------------------
+$user_type = trim($coupon["user_type"]);
+
+if ($user_type === "Particular User (Email)" && !empty($coupon["email"])) {
+    // Fetch user's email by user_id
     $u_stmt = $conn->prepare("SELECT email FROM users WHERE id = ?");
     $u_stmt->bind_param("i", $user_id);
     $u_stmt->execute();
@@ -184,13 +191,17 @@ if (trim($coupon["user_type"]) === "Particular User (Email)" && !empty($coupon["
     $user_email = $u_res->fetch_assoc()["email"] ?? "";
     $u_stmt->close();
 
-    if (strcasecmp($user_email, $coupon["email"]) !== 0) {
+    // Coupon emails stored as comma-separated list
+    $allowedEmails = array_map('trim', explode(',', $coupon["email"]));
+
+    if (!in_array(strtolower($user_email), array_map('strtolower', $allowedEmails))) {
         echo json_encode(["success" => false, "message" => "Coupon not valid for this email"]);
         exit;
     }
 }
 
-if (trim($coupon["user_type"]) === "Particular User (Mobile)" && !empty($coupon["mobile"])) {
+if ($user_type === "Particular User (Mobile)" && !empty($coupon["mobile"])) {
+    // Fetch user's mobile by user_id
     $u_stmt = $conn->prepare("SELECT mobile FROM users WHERE id = ?");
     $u_stmt->bind_param("i", $user_id);
     $u_stmt->execute();
@@ -198,7 +209,10 @@ if (trim($coupon["user_type"]) === "Particular User (Mobile)" && !empty($coupon[
     $user_mobile = $u_res->fetch_assoc()["mobile"] ?? "";
     $u_stmt->close();
 
-    if (strcasecmp($user_mobile, $coupon["mobile"]) !== 0) {
+    // Coupon mobiles stored as comma-separated list
+    $allowedMobiles = array_map('trim', explode(',', $coupon["mobile"]));
+
+    if (!in_array(strtolower($user_mobile), array_map('strtolower', $allowedMobiles))) {
         echo json_encode(["success" => false, "message" => "Coupon not valid for this mobile"]);
         exit;
     }
@@ -207,7 +221,13 @@ if (trim($coupon["user_type"]) === "Particular User (Mobile)" && !empty($coupon[
 // ------------------------------------
 // Discount Calculation
 // ------------------------------------
-$discount_percent = floatval($coupon["discount"]);
+$discount_percent = floatval($coupon["discount"] ?? 0);
+
+if ($discount_percent <= 0) {
+    echo json_encode(["success" => false, "message" => "Coupon discount is invalid"]);
+    exit;
+}
+
 $discount_amount = round(($total_amount * $discount_percent) / 100, 2);
 $new_total = round($total_amount - $discount_amount, 2);
 

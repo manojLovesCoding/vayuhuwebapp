@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showCoupon, setShowCoupon] = useState(true);
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,13 +83,31 @@ const Navbar = () => {
 
   return (
     <>
+      {/* Coupon Banner */}
+      {showCoupon && (
+        <div className="fixed top-0 left-0 w-full z-[60] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-xs sm:text-sm md:text-base font-semibold flex items-center justify-center text-center">
+          <span className="leading-snug text-[10px] xs:text-xs sm:text-sm md:text-base">
+            🎉 Apply coupon <span className="underline">VC01</span> and pay just
+            <span className="mx-1 line-through opacity-80">₹250</span>
+            <span className="font-bold">₹100</span> for Video Conferencing!
+          </span>
+
+          <button
+            onClick={() => setShowCoupon(false)}
+            className="ml-3 text-white/80 hover:text-white text-lg"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Navbar */}
       <div
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
+        className={`fixed left-0 w-full z-50 transition-all duration-300 ${showCoupon ? "top-9 sm:top-10 md:top-11" : "top-0"
+          } ${isScrolled
             ? "bg-black/80 backdrop-blur-md shadow-md"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="container mx-auto flex items-center py-3 px-4 sm:px-8 md:px-16 lg:px-24 justify-between">
           {/* Logo */}
@@ -122,11 +142,10 @@ const Navbar = () => {
                   boxShadow: "0px 10px 20px rgba(255,127,80,0.4)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full font-medium border text-sm sm:text-base transition-all duration-300 ${
-                  item.isActive
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium border text-sm transition-all duration-300 ${item.isActive
                     ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white border-transparent"
-                    : "text-orange-400 bg-white/0 border border-orange-400 hover:bg-gradient-to-r hover:from-orange-400 hover:to-orange-600 hover:text-white"
-                }`}
+                    : "text-orange-400 border-orange-400 hover:bg-gradient-to-r hover:from-orange-400 hover:to-orange-600 hover:text-white"
+                  }`}
               >
                 {item.label}
               </motion.button>
@@ -137,19 +156,19 @@ const Navbar = () => {
               onClick={() => navigate(user ? "/dashboard" : "/auth")}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold px-6 py-3 rounded-full shadow-md transition-all duration-300"
+              className="bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold px-6 py-3 rounded-full shadow-md"
             >
               {user ? "My Account" : "Sign up / Login"}
             </motion.button>
           </div>
 
           {/* Mobile Menu Icon */}
-          <div className="flex justify-end flex-1 items-center gap-4 md:hidden">
+          <div className="flex md:hidden flex-1 justify-end">
             <img
-              onClick={() => setShowMobileMenu(true)}
               src={assets.menu_icon}
-              className="w-6 sm:w-7 cursor-pointer invert"
-              alt="menu icon"
+              alt="menu"
+              className="w-6 cursor-pointer invert"
+              onClick={() => setShowMobileMenu(true)}
             />
           </div>
         </div>
@@ -157,34 +176,34 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       <div
-        className={`md:hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-lg flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
-          showMobileMenu ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+        className={`md:hidden fixed inset-0 z-[9999] bg-black/60 backdrop-blur-lg flex flex-col items-center justify-center transition-all duration-500 ${showMobileMenu ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
       >
         {/* Close Button */}
         <img
-          onClick={() => setShowMobileMenu(false)}
+
           src={assets.cross_icon}
+          alt="close"
           className="absolute top-6 right-6 w-6 cursor-pointer"
-          alt="close menu"
+          onClick={() => setShowMobileMenu(false)}
         />
 
         {/* Mobile Nav Links */}
-        <ul className="flex flex-col items-center gap-6 text-lg font-semibold">
+        <ul className="flex flex-col gap-6">
+
           {navItems.map((item, i) => (
             <motion.button
               key={i}
               onClick={item.action}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0px 10px 20px rgba(255,127,80,0.4)",
-              }}
+
+
+
+
               whileTap={{ scale: 0.95 }}
-              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${
-                item.isActive
+              className={`px-6 py-3 rounded-full font-semibold ${item.isActive
                   ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white"
-                  : "text-orange-400 bg-white/0 hover:bg-gradient-to-r hover:from-orange-400 hover:via-red-900 hover:to-orange-600 hover:text-white"
-              }`}
+                  : "text-orange-400 hover:bg-orange-500 hover:text-white"
+                }`}
             >
               {item.label}
             </motion.button>
@@ -197,9 +216,9 @@ const Navbar = () => {
             setShowMobileMenu(false);
             navigate(user ? "/dashboard" : "/auth");
           }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="mt-8 bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold px-8 py-3 rounded-full shadow-md transition-all duration-300"
+          className="mt-8 bg-gradient-to-r from-orange-400 to-orange-600 text-white px-8 py-3 rounded-full font-semibold"
+
+
         >
           {user ? "My Account" : "Sign up / Login"}
         </motion.button>
