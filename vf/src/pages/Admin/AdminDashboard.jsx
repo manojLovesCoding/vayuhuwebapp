@@ -144,11 +144,17 @@ const AdminDashboard = () => {
   // Filter only ongoing reservations (today or in the future)
   const ongoingReservationsList = useMemo(() => {
     const now = new Date();
+
     return reservations.filter((r) => {
+      if (!r.end_date) return false;
+
       const endDate = new Date(r.end_date);
-      return r.end_date && endDate >= now;
+      endDate.setHours(23, 59, 59, 999); // 👈 key fix
+
+      return endDate >= now;
     });
   }, [reservations]);
+
 
   // Chart Options (Memoized)
   const chartOptions = useMemo(

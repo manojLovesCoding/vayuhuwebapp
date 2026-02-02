@@ -9,6 +9,10 @@ const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showCoupon, setShowCoupon] = useState(true);
+  const [coupon, setCoupon] = useState(null);
+  const isBannerVisible = coupon && showCoupon;
+
+
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +24,24 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const fetchCoupon = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/get_active_coupon_for_user.php`,
+          { credentials: "include" }
+        );
+        const data = await res.json();
+        if (data.success) setCoupon(data.coupon);
+      } catch (err) {
+        console.error("Coupon fetch failed");
+      }
+    };
+
+    fetchCoupon();
+  }, []);
+
 
   // ✅ Smooth scroll helper
   const scrollToSection = (id) => {
@@ -84,31 +106,33 @@ const Navbar = () => {
   return (
     <>
       {/* Coupon Banner */}
-      {showCoupon && (
-        <div className="fixed top-0 left-0 w-full z-[60] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-xs sm:text-sm md:text-base font-semibold flex items-center justify-center text-center">
-          <span className="leading-snug text-[10px] xs:text-xs sm:text-sm md:text-base">
-            🎉 Apply coupon <span className="underline">VC01</span> and pay just
-            <span className="mx-1 line-through opacity-80">₹250</span>
-            <span className="font-bold">₹100</span> for Video Conferencing!
-          </span>
+      {coupon && showCoupon &&
+        (
+          <div className="fixed top-0 left-0 w-full z-[60] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-xs sm:text-sm md:text-base font-semibold flex items-center justify-center text-center">
+            <span className="leading-snug text-[10px] xs:text-xs sm:text-sm md:text-base">
+              🎉 Apply coupon <span className="underline">{coupon.coupon_code}</span>
+              and get <span className="font-bold">{coupon.discount}% OFF</span>!
 
-          <button
-            onClick={() => setShowCoupon(false)}
-            className="ml-3 text-white/80 hover:text-white text-lg"
-          >
-            ×
-          </button>
-        </div>
-      )}
+              <span className="font-bold">₹100</span> for Video Conferencing!
+            </span>
+
+            <button
+              onClick={() => setShowCoupon(false)}
+              className="ml-3 text-white/80 hover:text-white text-lg"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
       {/* Navbar */}
       <div
-        className={`fixed left-0 w-full z-50 transition-all duration-300 ${showCoupon ? "top-9 sm:top-10 md:top-11" : "top-0"
-          } ${isScrolled
-            ? "bg-black/80 backdrop-blur-md shadow-md"
-            : "bg-transparent"
-          }`}
+        className={`fixed left-0 w-full z-50 transition-all duration-300
+    ${isBannerVisible ? "top-9 sm:top-10 md:top-11" : "top-0"}
+    ${isScrolled ? "bg-black/80 backdrop-blur-md shadow-md" : "bg-transparent"}
+  `}
       >
+
         <div className="container mx-auto flex items-center py-3 px-4 sm:px-8 md:px-16 lg:px-24 justify-between">
           {/* Logo */}
           <div className="flex justify-start flex-1">
@@ -143,8 +167,8 @@ const Navbar = () => {
                 }}
                 whileTap={{ scale: 0.95 }}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium border text-sm transition-all duration-300 ${item.isActive
-                    ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white border-transparent"
-                    : "text-orange-400 border-orange-400 hover:bg-gradient-to-r hover:from-orange-400 hover:to-orange-600 hover:text-white"
+                  ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white border-transparent"
+                  : "text-orange-400 border-orange-400 hover:bg-gradient-to-r hover:from-orange-400 hover:to-orange-600 hover:text-white"
                   }`}
               >
                 {item.label}
@@ -201,8 +225,8 @@ const Navbar = () => {
 
               whileTap={{ scale: 0.95 }}
               className={`px-6 py-3 rounded-full font-semibold ${item.isActive
-                  ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white"
-                  : "text-orange-400 hover:bg-orange-500 hover:text-white"
+                ? "bg-gradient-to-r from-orange-400 to-orange-600 text-white"
+                : "text-orange-400 hover:bg-orange-500 hover:text-white"
                 }`}
             >
               {item.label}

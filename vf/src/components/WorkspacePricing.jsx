@@ -117,8 +117,8 @@ const getDaysOfWeekInDateRange = (start, end) => {
   const rotated =
     startIndex !== -1
       ? presentWorkingDays
-          .slice(startIndex)
-          .concat(presentWorkingDays.slice(0, startIndex))
+        .slice(startIndex)
+        .concat(presentWorkingDays.slice(0, startIndex))
       : presentWorkingDays;
   return rotated.map((d) => DAY_ABBREVIATIONS_MAP[d]).join(", ");
 };
@@ -162,6 +162,49 @@ const WorkspacePricing = () => {
   const { cart, addToCart } = useCart(); // Ensure cart is destructured here
   const [cartOpen, setCartOpen] = useState(false);
 
+  // Add these to your WorkspacePricing states
+  const [userEmployees, setUserEmployees] = useState([]);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+
+  // Fetch employees for the logged-in user
+  useEffect(() => {
+    const userId = getUserId();
+    if (userId) {
+      axios.get(`${API_BASE_URL}/get_employees.php?user_id=${userId}`, { withCredentials: true })
+        .then(res => {
+          if (res.data.success) {
+            setUserEmployees(res.data.employees || []);
+          }
+        })
+        .catch(err => console.error("Error fetching user employees:", err));
+    }
+  }, []);
+
+  // 1. Add state for the attendee
+  const [bookingUser, setBookingUser] = useState(null);
+
+  // 2. Function to fetch profile
+  const fetchBookingUser = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/get_booking_user.php`, {
+        withCredentials: true // Required to read the HttpOnly cookie
+      });
+      if (response.data.success) {
+        setBookingUser(response.data.user);
+        setNumAttendees(1); // Default to 1 for the logged-in user
+      }
+    } catch (err) {
+      console.error("Auth error", err);
+    }
+  };
+
+  // 3. Trigger when Video Conferencing modal is opened
+  useEffect(() => {
+    if (modalData?.title === "Video Conferencing") {
+      fetchBookingUser();
+    }
+  }, [modalData]);
+
   useEffect(() => {
     // ✅ Switched to Axios
     axios
@@ -200,9 +243,8 @@ const WorkspacePricing = () => {
   const groupedWorkspaces = useMemo(() => {
     const map = new Map();
     workspaces.forEach((w) => {
-      const key = `${w.title}||${w.hourly ?? 0}||${w.daily ?? 0}||${
-        w.monthly ?? 0
-      }`;
+      const key = `${w.title}||${w.hourly ?? 0}||${w.daily ?? 0}||${w.monthly ?? 0
+        }`;
       if (!map.has(key)) {
         map.set(key, {
           title: w.title,
@@ -293,43 +335,43 @@ const WorkspacePricing = () => {
   }, [startTime, endTime, modalData?.planType]);
 
   const handleApplyCoupon = async () => {
-  if (!coupon) return toast.error("Please enter a coupon code");
+    if (!coupon) return toast.error("Please enter a coupon code");
 
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/apply_coupon.php`,
-      {
-        coupon_code: coupon,
-        workspace_title: modalData?.title,
-        plan_type: modalData?.planType,
-        total_amount: calculateBaseAmount(),
-        // user_id removed, handled securely server-side
-      },
-      { withCredentials: true } // important for HttpOnly cookie
-    );
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/apply_coupon.php`,
+        {
+          coupon_code: coupon,
+          workspace_title: modalData?.title,
+          plan_type: modalData?.planType,
+          total_amount: calculateBaseAmount(),
+          // user_id removed, handled securely server-side
+        },
+        { withCredentials: true } // important for HttpOnly cookie
+      );
 
-    const data = res.data;
+      const data = res.data;
 
-    if (data.success) {
-      setDiscount(Number(data.discount_amount || 0));
-      toast.success(data.message || "Coupon applied successfully!");
-    } else {
-      setDiscount(0);
+      if (data.success) {
+        setDiscount(Number(data.discount_amount || 0));
+        toast.success(data.message || "Coupon applied successfully!");
+      } else {
+        setDiscount(0);
 
-      // Keep the original server message
-      let errorMessage = data.message || "Invalid coupon code";
+        // Keep the original server message
+        let errorMessage = data.message || "Invalid coupon code";
 
-      // Add extra note if coupon is VC01
-      if (coupon === "VC01") {
-        errorMessage += " Please contact admin.";
+        // Add extra note if coupon is VC01
+        if (coupon === "VC01") {
+          errorMessage += " Please contact admin.";
+        }
+
+        toast.error(errorMessage);
       }
-
-      toast.error(errorMessage);
+    } catch (err) {
+      toast.error("Error validating coupon. Please try again.");
     }
-  } catch (err) {
-    toast.error("Error validating coupon. Please try again.");
-  }
-};
+  };
 
 
   const calculateBaseAmount = () => {
@@ -605,20 +647,20 @@ const WorkspacePricing = () => {
         title={
           isDisabled
             ? (() => {
-                const reason = c.raw.availability_reason || "";
-                const endDate = c.raw.end_date || "";
-                const endTime = c.raw.end_time || "";
-                if (
-                  endTime &&
-                  endDate === new Date().toISOString().split("T")[0]
-                ) {
-                  const [hour, minute] = endTime.split(":");
-                  const formattedHour = hour % 12 || 12;
-                  const ampm = hour >= 12 ? "PM" : "AM";
-                  return `Booked until ${formattedHour}:${minute} ${ampm} today`;
-                }
-                return reason;
-              })()
+              const reason = c.raw.availability_reason || "";
+              const endDate = c.raw.end_date || "";
+              const endTime = c.raw.end_time || "";
+              if (
+                endTime &&
+                endDate === new Date().toISOString().split("T")[0]
+              ) {
+                const [hour, minute] = endTime.split(":");
+                const formattedHour = hour % 12 || 12;
+                const ampm = hour >= 12 ? "PM" : "AM";
+                return `Booked until ${formattedHour}:${minute} ${ampm} today`;
+              }
+              return reason;
+            })()
             : isSelected
               ? "Click to Deselect"
               : "Available"
@@ -639,13 +681,12 @@ const WorkspacePricing = () => {
           }
         }}
         className={`w-14 h-10 rounded-md flex items-center justify-center text-xs font-semibold transition-all border
-        ${
-          isDisabled
+        ${isDisabled
             ? "bg-gray-200 text-gray-400 cursor-not-allowed"
             : isSelected
               ? "bg-orange-500 text-white border-orange-600 scale-105 shadow-md"
               : "bg-green-100 text-gray-700 border-green-300 hover:bg-green-200"
-        }`}
+          }`}
       >
         {c.code}
       </motion.button>
@@ -910,11 +951,10 @@ const WorkspacePricing = () => {
                       codeSelectModal.planType,
                     );
                   }}
-                  className={`px-5 py-2 rounded-lg font-semibold transition-all ${
-                    codeSelectModal.selectedIds.length > 0
-                      ? "bg-orange-500 text-white hover:bg-orange-600"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                  className={`px-5 py-2 rounded-lg font-semibold transition-all ${codeSelectModal.selectedIds.length > 0
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   Confirm
                 </button>
@@ -1083,33 +1123,74 @@ const WorkspacePricing = () => {
                       </div>
                     </div>
 
-                    {modalData.title === "Video Conferencing" && (
-                      <div className="mb-4">
-                        <label className="block text-gray-700 mb-2">
-                          Number of Attendees:
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max={modalData.capacity}
-                          value={numAttendees}
-                          onChange={(e) => {
-                            const val = Math.max(
-                              1,
-                              Math.min(
-                                modalData.capacity,
-                                parseInt(e.target.value) || 1,
-                              ),
-                            );
-                            setNumAttendees(val);
-                          }}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                          placeholder={`Max ${modalData.capacity} persons`}
-                          disabled={
-                            modalData.seatCount > 1 &&
-                            modalData.title !== "Video Conferencing"
-                          }
-                        />
+                    {modalData.planType === "Hourly" && modalData.title === "Video Conferencing" && (
+                      <div className="mb-4 space-y-4">
+                        {/* 1. Fixed Host Section */}
+                        <div>
+                          <label className="block text-gray-700 font-medium mb-2">Host (You):</label>
+                          <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                              {bookingUser?.name?.charAt(0).toUpperCase() || "H"}
+                            </div>
+                            <span className="text-sm font-semibold text-gray-800">
+                              {bookingUser?.name || "Loading..."} (Host)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 2. Scrollable Team Selection Section */}
+                        <div>
+                          <label className="block text-gray-700 font-medium mb-2">
+                            Select Additional Attendees:
+                          </label>
+                          {/* scrollbar added here using max-h-40 and overflow-y-auto */}
+                          <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2 bg-gray-50 custom-scrollbar">
+                            {userEmployees.length > 0 ? (
+                              userEmployees.map((emp) => (
+                                <label
+                                  key={emp.id}
+                                  className="flex items-center gap-3 p-2 bg-white rounded border border-gray-100 cursor-pointer hover:bg-orange-50 transition"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="w-4 h-4 accent-orange-500"
+                                    checked={selectedEmployeeIds.includes(emp.id)}
+                                    onChange={(e) => {
+                                      const isChecked = e.target.checked;
+
+                                      // Capacity Check: selectedEmployees + 1 (Host)
+                                      if (isChecked && (selectedEmployeeIds.length + 1) >= modalData.capacity) {
+                                        return toast.warn(`Maximum capacity of ${modalData.capacity} reached.`);
+                                      }
+
+                                      const ids = isChecked
+                                        ? [...selectedEmployeeIds, emp.id]
+                                        : selectedEmployeeIds.filter((id) => id !== emp.id);
+
+                                      setSelectedEmployeeIds(ids);
+                                      setNumAttendees(ids.length + 1);
+                                    }}
+                                  />
+                                  <span className="text-sm text-gray-700">{emp.employee_name}</span>
+                                </label>
+                              ))
+                            ) : (
+                              <p className="text-xs text-gray-500 italic text-center py-2">
+                                No team members found in your profile.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 3. Summary Footer */}
+                        <div className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                          <p className="text-[11px] font-bold text-gray-600">
+                            Total People: {selectedEmployeeIds.length + 1}
+                          </p>
+                          <p className="text-[10px] text-gray-500">
+                            Max Capacity: {modalData.capacity}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </>
@@ -1136,14 +1217,13 @@ const WorkspacePricing = () => {
                         numAttendees < 1))
                   }
                   onClick={checkAvailabilityAndProceed}
-                  className={`w-full py-2 rounded-lg font-medium transition ${
-                    termsAccepted &&
+                  className={`w-full py-2 rounded-lg font-medium transition ${termsAccepted &&
                     startDate &&
                     totalHours > 0 &&
                     numAttendees >= 1
-                      ? "bg-orange-500 text-white hover:bg-orange-600"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   Next »
                 </button>
@@ -1239,11 +1319,10 @@ const WorkspacePricing = () => {
                       !endDate || new Date(endDate) < new Date(startDate)
                     }
                     onClick={() => setStep(3)}
-                    className={`px-4 py-2 rounded-lg font-medium transition ${
-                      endDate && new Date(endDate) >= new Date(startDate)
-                        ? "bg-orange-500 text-white hover:bg-orange-600"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${endDate && new Date(endDate) >= new Date(startDate)
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      }`}
                   >
                     Next »
                   </button>
@@ -1649,7 +1728,7 @@ const WorkspacePricing = () => {
                                 } else {
                                   toast.error(
                                     finalBooking.data.message ||
-                                      "Booking registration failed",
+                                    "Booking registration failed",
                                   );
                                 }
                               } else {
@@ -1664,7 +1743,7 @@ const WorkspacePricing = () => {
                       } catch (err) {
                         toast.error(
                           "Process failed: " +
-                            (err.response?.data?.message || err.message),
+                          (err.response?.data?.message || err.message),
                         );
                       }
                     }}
