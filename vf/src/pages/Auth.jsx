@@ -1,38 +1,35 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import api from "../api/axios";
+import api from "../api/axios"; // ✅ Use Axios instance
 import { useAuth } from "../context/AuthContext";
 
 const Auth = () => {
-  // 🔒 Always login mode
-  const [isLogin] = useState(true);
-
-  // const [name, setName] = useState(""); // ❌ Signup disabled
+  const [isLogin, setIsLogin] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  const { loginUser } = useAuth();
+ const { loginUser } = useAuth();
 
+
+  // ✅ Handle login/signup
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
 
-    // ❌ Signup removed
-    // const url = isLogin ? "/login.php" : "/signup.php";
-    // const payload = { email, password, ...(isLogin ? {} : { name }) };
-
-    const url = "/login.php";
-    const payload = { email, password };
+    const url = isLogin ? "/login.php" : "/signup.php";
+    const payload = { email, password, ...(isLogin ? {} : { name }) };
 
     try {
-      const { data } = await api.post(url, payload);
+      const { data } = await api.post(url, payload); // ✅ Using Axios instance
 
       setMessage(data.message);
 
-      if (data.status === "success" && data.user) {
-        loginUser(data.user);
+       if (data.status === "success" && data.user) {
+  loginUser(data.user);
+
         setTimeout(() => navigate("/dashboard"), 800);
       }
     } catch (error) {
@@ -42,8 +39,8 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    window.scrollTo({ top: 700, behavior: "smooth" });
-  }, []);
+  window.scrollTo({ top: 700, behavior: "smooth" });
+}, []);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
@@ -60,32 +57,26 @@ const Auth = () => {
 
       {/* BRAND LOGO */}
       <div className="absolute top-14 flex flex-col items-center z-20 animate-fadein">
-        <img
-          src={assets.brandLogo}
-          alt="Brand Logo"
-          className="w-28 h-28 object-contain drop-shadow-xl animate-pop"
-        />
+        <img src={assets.brandLogo} alt="Brand Logo" className="w-28 h-28 object-contain drop-shadow-xl animate-pop" />
       </div>
 
       {/* AUTH CARD */}
       <div className="relative bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl w-96 z-10 border border-orange-100">
         <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
-          {/* ❌ Signup text removed */}
-          Welcome Back 👋
+          {isLogin ? "Welcome Back 👋" : "Create Your Account ✨"}
         </h2>
 
         <form onSubmit={handleSubmit}>
-          {/*
-          ❌ Name field disabled (signup only)
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            required
-          />
-          */}
+          {!isLogin && (
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+          )}
 
           <input
             type="email"
@@ -105,29 +96,22 @@ const Auth = () => {
             required
           />
 
-          <button
-            type="submit"
-            className="w-full bg-orange-500 shadow-lg text-white font-semibold py-3 rounded-lg hover:bg-orange-600 hover:shadow-xl transition-all"
-          >
-            Login
+          <button type="submit" className="w-full bg-orange-500 shadow-lg text-white font-semibold py-3 rounded-lg hover:bg-orange-600 hover:shadow-xl transition-all">
+            {isLogin ? "Login" : "Sign Up"}
           </button>
 
-          {message && (
-            <p className="mt-4 text-center text-sm font-medium text-gray-700">
-              {message}
-            </p>
-          )}
+          {message && <p className="mt-4 text-center text-sm font-medium text-gray-700">{message}</p>}
         </form>
 
-        {/*
-        ❌ Signup toggle disabled but styling preserved
         <p className="text-center text-sm mt-6 text-gray-700">
-          Don’t have an account?
-          <span className="text-orange-500 font-medium cursor-pointer hover:underline">
-            Sign Up
+          {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
+          <span
+            onClick={() => { setIsLogin(!isLogin); setMessage(""); }}
+            className="text-orange-500 font-medium cursor-pointer hover:underline"
+          >
+            {isLogin ? "Sign Up" : "Login"}
           </span>
         </p>
-        */}
       </div>
 
       <style>{`
