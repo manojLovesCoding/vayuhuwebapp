@@ -1,15 +1,59 @@
-import React from "react";
+import React, { useRef } from "react";
 import Navbar from "./Navbar";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
+
+/* ================= TEXT ANIMATION VARIANTS ================= */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const wordVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: "easeOut" },
+  },
+};
+
+/* Glow pulse for "Grow." */
+const glowPulse = {
+  animate: {
+    textShadow: [
+      "0 0 10px rgba(255,165,0,0.4)",
+      "0 0 25px rgba(255,69,0,0.8)",
+      "0 0 10px rgba(255,165,0,0.4)",
+    ],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
+  },
+};
+/* =========================================================== */
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  /* Scroll replay control */
+  const headerRef = useRef(null);
+  const isInView = useInView(headerRef, {
+    once: false, // 👈 allows replay
+    margin: "-100px",
+  });
+
   const handleScrollNavigation = (sectionId) => {
     if (location.pathname !== "/") {
-      navigate("/"); // Go to homepage first
+      navigate("/");
       setTimeout(() => {
         document
           .getElementById(sectionId)
@@ -24,6 +68,7 @@ const Header = () => {
 
   return (
     <header
+      ref={headerRef}
       id="Header"
       className="relative min-h-screen bg-cover bg-center flex flex-col justify-between overflow-hidden"
       style={{ backgroundImage: "url('/BG.jpeg')" }}
@@ -36,17 +81,38 @@ const Header = () => {
       {/* Hero Content */}
       <motion.div
         initial={{ opacity: 0, y: 60 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 60 }}
         transition={{ duration: 1.2, ease: "easeOut" }}
         className="relative z-10 flex flex-col items-center justify-center text-center px-6 sm:px-10 md:px-16 lg:px-32 py-20 md:py-28 flex-grow"
       >
-        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-[80px] font-bold leading-tight max-w-4xl mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
-          <span className="text-[#800000]">Work. Connect.</span>{" "}
-          <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-            Grow.
-          </span>
-        </h1>
+        {/* Animated Heading */}
+        <motion.h1
+          variants={containerVariants}
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          className="text-3xl sm:text-5xl md:text-6xl lg:text-[80px] font-bold leading-tight max-w-4xl mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]"
+        >
+          {["Work.", "Connect.", "Grow."].map((word, index) => {
+            const isGrow = word === "Grow.";
 
+            return (
+              <motion.span
+                key={index}
+                variants={wordVariants}
+                {...(isGrow && glowPulse)}
+                className={`inline-block mr-4 ${
+                  isGrow
+                    ? "bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                    : "text-[#800000]"
+                }`}
+              >
+                {word}
+              </motion.span>
+            );
+          })}
+        </motion.h1>
+
+        {/* Subtitle */}
         <p className="mt-6 max-w-2xl text-base sm:text-lg md:text-xl text-red-900 px-4">
           Discover flexible and inspiring coworking spaces at{" "}
           <span className="font-semibold text-orange-400">Vayuhu</span> — built

@@ -976,7 +976,7 @@ const WorkspacePricing = () => {
             {/* Step 1 */}
             {step === 1 && (
               <motion.div
-                className="bg-white rounded-2xl p-8 max-w-md w-full shadow-xl relative"
+                className="bg-white rounded-2xl p-8 max-w-md w-full shadow-xl relative overflow-y-auto max-h-[90vh]"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}

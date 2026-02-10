@@ -15,8 +15,9 @@ const VirtualOfficeServices = () => {
             ],
         },
         {
-            title: "DOCUMENTS",
+            title: "DOCUMENTS (Applicable for GST & Business Registration)",
             items: [
+                "These documents are required for both GST Registration and Business Registration.",
                 "KYC documents of all directors.",
                 "PAN card of the company.",
                 "Name approval certificate of the company.",
@@ -126,10 +127,10 @@ const VirtualOfficeServices = () => {
                     ))}
                 </div>
             </motion.div>
-            {/* New Form Section */}
+
+            {/* Form Section */}
             <VirtualOfficeForm />
         </motion.section>
-
     );
 };
 

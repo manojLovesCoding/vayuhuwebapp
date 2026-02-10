@@ -14,11 +14,11 @@ import {
 const amenitiesList = [
     { title: 'High-Speed Internet', desc: 'Reliable and fast internet connectivity.', icon: Wifi },
     { title: 'UPS Backup', desc: 'Ensure uninterrupted productivity with our reliable UPS backup system.', icon: BatteryCharging },
-    { title: 'Tea/Coffee', desc: 'Loosen up and Recharge with complimentary tea & coffee.', icon: Coffee },
+    { title: 'Tea/Coffee', desc: 'Loosen up and Recharge with tea & coffee.', icon: Coffee },
     { title: 'House Keeping', desc: 'Regular cleaning to maintain a hygienic environment.', icon: Home },
     { title: 'Air Conditioner', desc: 'Our coworking space is fully air-conditioned.', icon: Wind },
     { title: 'Scanner & Printer', desc: 'Easily access our high-quality scanner and printer services.', icon: Printer },
-    { title: 'Dining Area Lounge', desc: 'Offers complimentary access, providing a welcoming space for guests.', icon: Users },
+    { title: 'Dining Area Lounge', desc: 'providing a welcoming space for guests.', icon: Users },
     { title: 'Meeting Room', desc: 'Available for booking at an additional cost, professional amenities for business gatherings.', icon: CalendarCheck },
 ];
 
