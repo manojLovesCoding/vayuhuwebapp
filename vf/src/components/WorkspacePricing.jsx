@@ -725,7 +725,7 @@ const WorkspacePricing = () => {
   return (
     <section
       id="WorkSpaces"
-      className="container mx-auto px-6 md:px-20 lg:px-32 py-20 relative"
+      className="container mx-auto px-6 py-20 relative scroll-mt-20"
     >
       <ToastContainer position="top-center" autoClose={2000} />
 
