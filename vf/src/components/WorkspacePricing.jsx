@@ -5,8 +5,9 @@ import { toast, ToastContainer } from "react-toastify";
 import axios from "axios"; // ✅ Added Axios
 import "react-toastify/dist/ReactToastify.css";
 import { useCart } from "../context/CartContext";
-import CartDrawer from "./CartDrawer";
-import FloatingCartButton from "./FloatingCartButton";
+//import CartDrawer from "./CartDrawer";
+//import FloatingCartButton from "./FloatingCartButton";
+import TermsModal from "./TermsModal";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Helper to get logged-in user id
@@ -155,6 +156,7 @@ const WorkspacePricing = () => {
   const [days, setDays] = useState(0);
   const [totalHours, setTotalHours] = useState(1);
   const [numAttendees, setNumAttendees] = useState(1);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Seat selection modal
   const [codeSelectModal, setCodeSelectModal] = useState(null);
@@ -1203,7 +1205,16 @@ const WorkspacePricing = () => {
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
-                  Accept Terms & Conditions
+                  <span className="text-sm">
+                    I accept the{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-orange-500 underline font-medium hover:text-orange-600"
+                    >
+                      Terms & Conditions
+                    </button>
+                  </span>
                 </label>
 
                 <button
@@ -1758,7 +1769,7 @@ const WorkspacePricing = () => {
         )}
       </AnimatePresence>
 
-      <CartDrawer
+      {/*<CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
         onCheckout={() => {
@@ -1769,7 +1780,13 @@ const WorkspacePricing = () => {
       <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-10">
         <FloatingCartButton onClick={() => setCartOpen(true)} />
       </div>
+      */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
     </section>
+
   );
 };
 

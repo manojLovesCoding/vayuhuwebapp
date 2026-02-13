@@ -1,21 +1,55 @@
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
 const Contact = () => {
-  const [result, setResult] = React.useState("");
+  const [result, setResult] = useState("");
+  const [errors, setErrors] = useState({}); // Track field errors
 
-  // Load API URL and access key from environment variables
   const API_URL =
     import.meta.env.VITE_CONTACT_API_URL || "https://api.web3forms.com/submit";
   const ACCESS_KEY =
     import.meta.env.VITE_CONTACT_ACCESS_KEY || "your-default-access-key";
+
+  // Validation logic
+  const validateForm = (formData) => {
+    const newErrors = {};
+
+    const name = formData.get("Name").trim();
+    if (name.length < 2) newErrors.Name = "Name must be at least 2 characters";
+
+    const email = formData.get("Email").trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) newErrors.Email = "Invalid email address";
+
+    const phone = formData.get("Phone").trim();
+    const phoneRegex = /^[0-9+\s()-]{7,15}$/;
+    if (!phoneRegex.test(phone)) newErrors.Phone = "Invalid phone number";
+
+    // Removed message validation
+    // const message = formData.get("Message").trim();
+    // if (message.length < 10) newErrors.Message = "Message must be at least 10 characters";
+
+    return newErrors;
+  };
+
 
   const onSubmit = async (event) => {
     event.preventDefault();
     setResult("Sending...");
 
     const formData = new FormData(event.target);
+
+    // Run validation
+    const newErrors = validateForm(formData);
+    setErrors(newErrors); // Update state for red border highlighting
+
+    if (Object.keys(newErrors).length > 0) {
+      Object.values(newErrors).forEach((err) => toast.error(err));
+      setResult("");
+      return;
+    }
+
     formData.append("access_key", ACCESS_KEY);
 
     try {
@@ -29,6 +63,7 @@ const Contact = () => {
       if (data.success) {
         setResult("");
         toast.success("Message sent successfully!");
+        setErrors({});
         event.target.reset();
       } else {
         toast.error(data.message || "Failed to send. Please try again.");
@@ -40,6 +75,13 @@ const Contact = () => {
       setResult("");
     }
   };
+
+  // Dynamic class for invalid fields
+  const getInputClass = (field) =>
+    `w-full border rounded-xl py-3 px-4 outline-none transition focus:ring-1 ${errors[field]
+      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+      : "border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+    }`;
 
   return (
     <motion.div
@@ -66,7 +108,7 @@ const Contact = () => {
         <div className="text-left mb-6">
           <label className="block font-medium mb-2">Your Name</label>
           <input
-            className="w-full border border-gray-300 rounded-xl py-3 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+            className={getInputClass("Name")}
             type="text"
             name="Name"
             placeholder="Enter your full name"
@@ -79,7 +121,7 @@ const Contact = () => {
           <div className="w-full md:flex-1 text-left">
             <label className="block font-medium mb-2">Your Email</label>
             <input
-              className="w-full border border-gray-300 rounded-xl py-3 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+              className={getInputClass("Email")}
               type="email"
               name="Email"
               placeholder="example@domain.com"
@@ -90,11 +132,10 @@ const Contact = () => {
           <div className="w-full md:flex-1 text-left">
             <label className="block font-medium mb-2">Phone Number</label>
             <input
-              className="w-full border border-gray-300 rounded-xl py-3 px-4 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+              className={getInputClass("Phone")}
               type="tel"
               name="Phone"
-              placeholder="+91 98765 43210"
-              pattern="[0-9+\s()-]{7,15}"
+              placeholder="+91 91111 11111"
               required
             />
           </div>
@@ -104,7 +145,7 @@ const Contact = () => {
         <div className="my-6 text-left">
           <label className="block font-medium mb-2">Message</label>
           <textarea
-            className="w-full border border-gray-300 rounded-xl py-3 px-4 h-40 resize-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+            className={getInputClass("Message") + " h-40 resize-none"}
             name="Message"
             placeholder="Write your message here..."
             required

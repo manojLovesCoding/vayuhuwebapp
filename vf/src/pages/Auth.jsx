@@ -30,7 +30,7 @@ const Auth = () => {
        if (data.status === "success" && data.user) {
   loginUser(data.user);
 
-        setTimeout(() => navigate("/dashboard"), 800);
+        setTimeout(() => navigate("/"), 800);
       }
     } catch (error) {
       console.error("Auth error:", error);
