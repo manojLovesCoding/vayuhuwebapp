@@ -838,130 +838,164 @@ const WorkspacePricing = () => {
       )}
 
       {/* BookMyShow-style Space Code Selection Modal */}
+      {/* Responsive Space Code Selection Modal */}
       <AnimatePresence>
         {codeSelectModal && (
           <motion.div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-2xl p-10 w-full max-w-2xl shadow-2xl relative overflow-y-auto max-h-[90vh]"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              className="
+          bg-white
+          w-full
+          h-[95vh] md:h-auto
+          max-w-full md:max-w-2xl
+          md:max-h-[90vh]
+          rounded-t-3xl md:rounded-2xl
+          p-5 md:p-10
+          shadow-2xl
+          relative
+          flex flex-col
+        "
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
+              {/* Close Button */}
               <button
                 onClick={() => setCodeSelectModal(null)}
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl"
+                className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-2xl"
               >
                 ✕
               </button>
 
-              <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">
+              {/* Header */}
+              <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-2 text-center">
                 Select Space Codes for{" "}
                 <span className="text-orange-500">
                   {codeSelectModal.groupTitle}
                 </span>
               </h3>
-              <p className="text-center text-gray-500 text-sm mb-6">
+
+              <p className="text-center text-gray-500 text-xs md:text-sm mb-4">
                 Click to select multiple seats
               </p>
 
-              <div className="flex flex-col items-center gap-5 mb-6">
-                {(() => {
-                  const seats = [...codeSelectModal.codes].sort((a, b) =>
-                    a.code.localeCompare(b.code, undefined, { numeric: true }),
-                  );
+              {/* Scrollable Seat Section */}
+              <div className="flex-1 overflow-y-auto pr-1 mb-4">
+                <div className="flex flex-col items-center gap-4">
+                  {(() => {
+                    const seats = [...codeSelectModal.codes].sort((a, b) =>
+                      a.code.localeCompare(b.code, undefined, { numeric: true })
+                    );
 
-                  const noWalkway = [
-                    "Team Leads Cubicle",
-                    "Manager Cubicle",
-                    "Executive Cabin",
-                  ].includes(codeSelectModal.groupTitle);
+                    const noWalkway = [
+                      "Team Leads Cubicle",
+                      "Manager Cubicle",
+                      "Executive Cabin",
+                    ].includes(codeSelectModal.groupTitle);
 
-                  return (
-                    <>
-                      <div className="flex justify-center gap-4">
-                        {seats.slice(0, 3).map(renderSeat)}
-                      </div>
-                      {!noWalkway && (
-                        <div className="w-3/4 border-t border-gray-300 my-2"></div>
-                      )}
-                      <div className="flex justify-center gap-4">
-                        {seats.slice(3, 10).map(renderSeat)}
-                      </div>
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="flex justify-center gap-4">
-                          {seats.slice(10, 17).map(renderSeat)}
+                    return (
+                      <>
+                        <div className="flex justify-center gap-3 flex-wrap">
+                          {seats.slice(0, 3).map(renderSeat)}
                         </div>
+
                         {!noWalkway && (
                           <div className="w-3/4 border-t border-gray-300 my-2"></div>
                         )}
-                        <div className="flex justify-center gap-4">
-                          {seats.slice(17, 24).map(renderSeat)}
+
+                        <div className="flex justify-center gap-3 flex-wrap">
+                          {seats.slice(3, 10).map(renderSeat)}
                         </div>
-                      </div>
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="flex justify-center gap-4">
-                          {seats.slice(24, 31).map(renderSeat)}
+
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="flex justify-center gap-3 flex-wrap">
+                            {seats.slice(10, 17).map(renderSeat)}
+                          </div>
+
+                          {!noWalkway && (
+                            <div className="w-3/4 border-t border-gray-300 my-2"></div>
+                          )}
+
+                          <div className="flex justify-center gap-3 flex-wrap">
+                            {seats.slice(17, 24).map(renderSeat)}
+                          </div>
                         </div>
-                        {!noWalkway && (
-                          <div className="w-3/4 border-t border-gray-300 my-2"></div>
-                        )}
-                        <div className="flex justify-center gap-4">
-                          {seats.slice(31, 38).map(renderSeat)}
+
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="flex justify-center gap-3 flex-wrap">
+                            {seats.slice(24, 31).map(renderSeat)}
+                          </div>
+
+                          {!noWalkway && (
+                            <div className="w-3/4 border-t border-gray-300 my-2"></div>
+                          )}
+
+                          <div className="flex justify-center gap-3 flex-wrap">
+                            {seats.slice(31, 38).map(renderSeat)}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-center gap-4">
-                        {seats.slice(38, 45).map(renderSeat)}
-                      </div>
-                    </>
-                  );
-                })()}
+
+                        <div className="flex justify-center gap-3 flex-wrap">
+                          {seats.slice(38, 45).map(renderSeat)}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
 
-              <div className="flex justify-center gap-6 text-sm text-gray-600 mb-6">
+              {/* Legend */}
+              <div className="flex justify-center gap-4 md:gap-6 text-xs md:text-sm text-gray-600 mb-4 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-green-100 border border-green-300 rounded-md"></span>
+                  <span className="w-4 h-4 md:w-5 md:h-5 bg-green-100 border border-green-300 rounded-md"></span>
                   <span>Available</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-orange-500 border border-orange-600 rounded-md"></span>
+                  <span className="w-4 h-4 md:w-5 md:h-5 bg-orange-500 border border-orange-600 rounded-md"></span>
                   <span>Selected</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-gray-200 border border-gray-300 rounded-md"></span>
+                  <span className="w-4 h-4 md:w-5 md:h-5 bg-gray-200 border border-gray-300 rounded-md"></span>
                   <span>Unavailable</span>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 items-center">
-                <span className="text-sm font-semibold text-gray-700 mr-2">
+              {/* Sticky Footer */}
+              <div className="sticky bottom-0 bg-white pt-3 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
+                <span className="text-sm font-semibold text-gray-700">
                   {codeSelectModal.selectedIds.length} seat(s) selected
                 </span>
-                <button
-                  onClick={() => setCodeSelectModal(null)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={codeSelectModal.selectedIds.length === 0}
-                  onClick={() => {
-                    confirmCodeSelection(
-                      codeSelectModal.selectedIds,
-                      codeSelectModal.planType,
-                    );
-                  }}
-                  className={`px-5 py-2 rounded-lg font-semibold transition-all ${codeSelectModal.selectedIds.length > 0
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                >
-                  Confirm
-                </button>
+
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <button
+                    onClick={() => setCodeSelectModal(null)}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    disabled={codeSelectModal.selectedIds.length === 0}
+                    onClick={() => {
+                      confirmCodeSelection(
+                        codeSelectModal.selectedIds,
+                        codeSelectModal.planType
+                      );
+                    }}
+                    className={`flex-1 sm:flex-none px-5 py-2 rounded-lg font-semibold transition-all ${codeSelectModal.selectedIds.length > 0
+                        ? "bg-orange-500 text-white hover:bg-orange-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      }`}
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
