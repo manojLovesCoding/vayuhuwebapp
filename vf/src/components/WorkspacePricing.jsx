@@ -552,9 +552,11 @@ const WorkspacePricing = () => {
   };
 
   const displayAmount = calculateBaseAmount();
-  const displayGst = (displayAmount * 0.18).toFixed(0);
-  const totalPreDiscount = (displayAmount + Number(displayGst)).toFixed(0);
-  const finalTotal = calculateTotal().toFixed(0);
+  const displayGst = +(displayAmount * 0.18).toFixed(2);
+  const totalPreDiscount = +(displayAmount + displayGst).toFixed(2);
+  const finalTotal = +(
+    displayAmount + displayGst - discount
+  ).toFixed(2);
 
   const checkAvailabilityAndProceed = async () => {
     if (!startDate) return;
@@ -1483,7 +1485,7 @@ const WorkspacePricing = () => {
                       )
                     </label>
                     <input
-                      value={`₹${displayAmount.toFixed(0)}`}
+                      value={`₹${displayAmount.toFixed(2)}`}
                       readOnly
                       className="w-full border rounded-lg px-3 py-2"
                     />
@@ -1542,7 +1544,7 @@ const WorkspacePricing = () => {
                       Final Total (including GST)
                     </label>
                     <input
-                      value={`₹${finalTotal}`}
+                      value={`₹${finalTotal.toFixed(2)}`}
                       readOnly
                       className="w-full border rounded-lg px-3 py-2 font-semibold"
                     />
@@ -1679,7 +1681,7 @@ const WorkspacePricing = () => {
 
                           const options = {
                             key: orderData.key,
-                            amount: bookingData.final_amount * 100,
+                            amount: Math.round(bookingData.final_amount * 100),
                             currency: "INR",
                             name: "Vayuhu Workspaces",
                             description: `${modalData.title} Booking`,

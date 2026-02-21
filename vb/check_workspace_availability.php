@@ -125,7 +125,8 @@ try {
             $nextAvailableDate = date('Y-m-d', strtotime($blockedEndDate . ' +1 day'));
             echo json_encode([
                 "success" => false,
-                "message" => "This workspace is fully booked for the selected date.",
+                //"message" => "This workspace is fully booked for the selected date.",
+                "message" => "This Selected Seat is booked.",
                 "available_dates" => ["from" => $nextAvailableDate]
 
 

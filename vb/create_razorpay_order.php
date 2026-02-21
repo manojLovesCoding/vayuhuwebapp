@@ -52,16 +52,18 @@ $api = new Api($razorpay_config['api_key'], $razorpay_config['api_secret']);
 
 // Read amount from frontend (in INR)
 $data = json_decode(file_get_contents("php://input"), true);
-$amount = isset($data['amount']) ? (int)$data['amount'] : 0;
+$amount = isset($data['amount']) ? (float)$data['amount'] : 0;
 
 if ($amount <= 0) {
     echo json_encode(["success" => false, "message" => "Invalid amount"]);
     exit;
 }
 
-// Create order in Razorpay (amount in paise)
+// Convert rupees to paise safely
+$amount_in_paise = (int) round($amount * 100);
+
 $order = $api->order->create([
-    'amount' => $amount * 100,
+    'amount' => $amount_in_paise,
     'currency' => 'INR',
     'receipt' => 'order_' . time(),
 ]);

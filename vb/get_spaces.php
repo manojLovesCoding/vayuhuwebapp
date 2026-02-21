@@ -2,8 +2,8 @@
 // ------------------------------------
 // Load Environment & Centralized CORS
 // ------------------------------------
-require_once __DIR__ . '/config/env.php';   // loads environment variables (JWT secret available if needed)
-require_once __DIR__ . '/config/cors.php';  // centralized CORS headers & OPTIONS handling
+require_once __DIR__ . '/config/env.php';
+require_once __DIR__ . '/config/cors.php';
 
 // ------------------------------------
 // Response Type
@@ -62,6 +62,7 @@ if ($result && $result->num_rows > 0) {
         $spaceId = (int)$row["id"];
         $currentSpaceCode = $row["space_code"];
 
+        // ✅ FIXED MONTHLY CONDITION HERE
         $checkSql = "
             SELECT start_date, end_date, start_time, end_time, plan_type
             FROM workspace_bookings
@@ -69,8 +70,8 @@ if ($result && $result->num_rows > 0) {
               AND status IN ('Confirmed', 'Pending')
               AND (
                     (plan_type = 'hourly'  AND start_date = ?)
-                 OR (plan_type = 'daily'   AND start_date >= ?)
-                 OR (plan_type = 'monthly' AND end_date >= ?)
+                 OR (plan_type = 'daily'   AND start_date = ?)
+                 OR (plan_type = 'monthly' AND ? BETWEEN start_date AND end_date)
               )
             ORDER BY start_date ASC
             LIMIT 1
@@ -99,10 +100,8 @@ if ($result && $result->num_rows > 0) {
                         $isAvailable = false;
                     }
                 } else {
-                    $endDate = new DateTime($bookedRow["end_date"]);
-                    if ($endDate >= new DateTime($today)) {
-                        $isAvailable = false;
-                    }
+                    // Daily or Monthly booking blocking today
+                    $isAvailable = false;
                 }
             }
             $stmt->close();
@@ -128,3 +127,4 @@ if ($result && $result->num_rows > 0) {
 }
 
 $conn->close();
+?>
