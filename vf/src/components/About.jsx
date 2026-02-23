@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react'
-import { assets } from '../assets/assets'
-import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
-import { Users, Ruler, Cog, Briefcase } from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { assets } from '../assets/assets';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Users, Ruler, Cog, Briefcase } from 'lucide-react';
 
 const About = () => {
     const navigate = useNavigate();
 
     const handleLearnMore = () => {
         navigate('/about');
-        window.scrollTo(0, 700);
+        window.scrollTo({ top: 700, behavior: 'smooth' });
     };
 
     const stats = [
@@ -19,28 +19,23 @@ const About = () => {
         { num: '60+', label: 'Workspaces', desc: 'Essentials and More at Your Fingertips', icon: Briefcase },
     ];
 
-    // Simple Carousel logic
     const carouselImages = [
         assets.brand_img,
         assets.aboutImg,
-        //assets.workspaceImg, // Add more images if needed
+        // add more images here if needed
     ];
     const [currentImage, setCurrentImage] = useState(0);
 
+    // Auto slide every 4s
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentImage(prev => (prev + 1) % carouselImages.length);
-        }, 4000); // change image every 4s
+        }, 4000);
         return () => clearInterval(interval);
     }, []);
 
-    const handlePrev = () => {
-        setCurrentImage(prev => (prev - 1 + carouselImages.length) % carouselImages.length);
-    };
-
-    const handleNext = () => {
-        setCurrentImage(prev => (prev + 1) % carouselImages.length);
-    };
+    const handlePrev = () => setCurrentImage(prev => (prev - 1 + carouselImages.length) % carouselImages.length);
+    const handleNext = () => setCurrentImage(prev => (prev + 1) % carouselImages.length);
 
     return (
         <motion.section
@@ -71,10 +66,11 @@ const About = () => {
                 Vayuhu brings professionals, freelancers, and startups together under one inspiring roof.
             </motion.p>
 
-            {/* ===== Content ===== */}
-            <div className='flex flex-col md:flex-row items-start gap-16'>
-                {/* ===== Left Simple Carousel ===== */}
-                <div className='relative w-full md:w-1/2 h-96 rounded-2xl shadow-lg overflow-hidden'>
+            {/* ===== Three Columns ===== */}
+            <div className='flex flex-col md:flex-row items-start gap-8 md:gap-16 w-full'>
+                
+                {/* ===== Left Column: Carousel with Dots ===== */}
+                <div className='relative w-full md:w-1/3 h-96 rounded-2xl shadow-lg overflow-hidden'>
                     <img
                         src={carouselImages[currentImage]}
                         alt='Vayuhu Coworking Space'
@@ -82,70 +78,33 @@ const About = () => {
                     />
 
                     {/* Carousel Controls */}
-                    <button
-                        onClick={handlePrev}
-                        className='absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'
-                    >
-                        ‹
-                    </button>
-                    <button
-                        onClick={handleNext}
-                        className='absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'
-                    >
-                        ›
-                    </button>
+                    <button onClick={handlePrev} className='absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'>‹</button>
+                    <button onClick={handleNext} className='absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'>›</button>
+
+                    {/* Dots Navigation */}
+                    <div className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2'>
+                        {carouselImages.map((_, index) => (
+                            <span
+                                key={index}
+                                onClick={() => setCurrentImage(index)}
+                                className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
+                                    currentImage === index ? 'bg-orange-500' : 'bg-white/70'
+                                }`}
+                            />
+                        ))}
+                    </div>
                 </div>
 
-                {/* ===== Right Text + Stats ===== */}
+                {/* ===== Middle Column: About Text + Button ===== */}
                 <motion.div
-                    className='flex flex-col items-start text-gray-700 max-w-lg'
-                    initial={{ opacity: 0, x: 100 }}
+                    className='flex flex-col text-gray-700 md:w-1/3'
+                    initial={{ opacity: 0, x: 50 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 1 }}
                     viewport={{ once: true }}
                 >
-                    {/* ===== Quick Stats with Animated Icons ===== */}
-                    <motion.div
-                        className='grid grid-cols-2 gap-8 mb-10 w-full'
-                        initial={{ opacity: 0, y: 50 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.8 }}
-                    >
-                        {stats.map(({ num, label, desc, icon: Icon }, i) => (
-                            <motion.div
-                                key={i}
-                                whileHover={{ scale: 1.05 }}
-                                transition={{ type: 'spring', stiffness: 200 }}
-                                className='flex flex-col items-start space-y-1 bg-white/80 backdrop-blur-md shadow-md rounded-xl p-4 hover:shadow-lg transition'
-                            >
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    animate={{
-                                        y: [0, -5, 0],
-                                        scale: [1, 1.1, 1],
-                                    }}
-                                    transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: 'easeInOut',
-                                        delay: i * 0.3,
-                                    }}
-                                    className='flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 mb-1'
-                                >
-                                    <Icon className='text-orange-500' size={22} />
-                                </motion.div>
-
-                                <p className='text-3xl font-bold text-orange-500'>{num}</p>
-                                <p className='text-sm font-medium'>{label}</p>
-                                <p className='text-sm text-gray-500'>{desc}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
-
-                    {/* ===== About Text ===== */}
                     <motion.p
-                        initial={{ opacity: 0, y: 40 }}
+                        initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.8 }}
                         className='text-base leading-relaxed mb-8'
@@ -154,7 +113,6 @@ const About = () => {
                         From modern workspaces to community-driven initiatives, every detail is designed to empower innovation, comfort, and growth.
                     </motion.p>
 
-                    {/* ===== Learn More Button ===== */}
                     <motion.button
                         onClick={handleLearnMore}
                         whileHover={{ scale: 1.05 }}
@@ -164,9 +122,68 @@ const About = () => {
                         Learn More
                     </motion.button>
                 </motion.div>
+
+                {/* ===== Right Column: Stats (2x2 Grid) with Framer Motion ===== */}
+                <motion.div
+                    className='grid grid-cols-2 gap-6 md:w-1/3'
+                    variants={{
+                        hidden: {},
+                        visible: { transition: { staggerChildren: 0.2 } }
+                    }}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                >
+                    {stats.map(({ num, label, desc, icon: Icon }, i) => (
+                        <motion.div
+                            key={i}
+                            className='flex flex-col items-start space-y-1 bg-white/80 backdrop-blur-md shadow-md rounded-xl p-4 hover:shadow-lg cursor-pointer'
+                            variants={{
+                                hidden: { opacity: 0, y: 30 },
+                                visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 200, damping: 20 } }
+                            }}
+                            whileHover={{ scale: 1.05, transition: { type: 'spring', stiffness: 300 } }}
+                        >
+                            <motion.div
+                                className='flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 mb-1'
+                                animate={{ y: [0, -5, 0], scale: [1, 1.1, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
+                            >
+                                <Icon className='text-orange-500' size={22} />
+                            </motion.div>
+
+                            <motion.p
+                                className='text-3xl font-bold text-orange-500'
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 0.3 + i * 0.2, type: 'spring', stiffness: 300 }}
+                            >
+                                {num}
+                            </motion.p>
+
+                            <motion.p
+                                className='text-sm font-medium'
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4 + i * 0.2 }}
+                            >
+                                {label}
+                            </motion.p>
+
+                            <motion.p
+                                className='text-sm text-gray-500'
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 + i * 0.2 }}
+                            >
+                                {desc}
+                            </motion.p>
+                        </motion.div>
+                    ))}
+                </motion.div>
             </div>
         </motion.section>
-    )
-}
+    );
+};
 
-export default About
+export default About;

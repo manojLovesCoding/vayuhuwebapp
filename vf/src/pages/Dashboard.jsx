@@ -40,8 +40,13 @@ const Dashboard = () => {
         setBookings(response.data.bookings || []);
         setSummary(response.data.summary || {});
       } catch (err) {
-        if (err.response?.status === 401) {
-          window.dispatchEvent(new Event("logout"));
+        if (
+          err.response?.status === 401 ||
+          err.response?.status === 403
+        ) {
+          localStorage.removeItem("user");
+          window.location.href = "/";
+          return;
         }
         setError(
           err.response?.data?.message ||
@@ -80,10 +85,10 @@ const Dashboard = () => {
               </h3>
               <span
                 className={`text-xs px-2 py-1 rounded ${b.status === "confirmed"
-                    ? "bg-green-100 text-green-700"
-                    : b.status === "cancelled"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-yellow-100 text-yellow-700"
+                  ? "bg-green-100 text-green-700"
+                  : b.status === "cancelled"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-yellow-100 text-yellow-700"
                   }`}
               >
                 {b.status}
@@ -169,10 +174,10 @@ const Dashboard = () => {
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 rounded text-xs ${b.status === "confirmed"
-                          ? "bg-green-100 text-green-700"
-                          : b.status === "cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
+                        ? "bg-green-100 text-green-700"
+                        : b.status === "cancelled"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
                         }`}
                     >
                       {b.status}

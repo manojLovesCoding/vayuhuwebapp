@@ -11,9 +11,9 @@ const Gallery = () => {
         { src: "workspaces5.jpg", title: "Executive Cabin" },
         { src: "workspaces6.jpg", title: "CEO Cabin" },
         { src: "workspaces3.jpg", title: "Video Conferencing Room" },
-        { src: "workspace7.jpg", title: "Collaborative Lounge" },
-        { src: "workspace8.jpg", title: "Open Desk Area" },
-        { src: "workspace9.jpg", title: "Café & Refreshment Zone" },
+        //{ src: "workspace7.jpg", title: "Collaborative Lounge" },
+        //{ src: "workspace8.jpg", title: "Open Desk Area" },
+        //{ src: "workspace9.jpg", title: "Café & Refreshment Zone" },
     ];
 
     return (

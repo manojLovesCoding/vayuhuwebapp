@@ -20,17 +20,18 @@ import {
   FileText as BlogText,
   CreditCard,
   Settings,
-  BarChart3, // ✅ ADD THIS
+  BarChart3,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { assets } from "../assets/assets";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
-const AdminSidebar = ({ isOpen, setIsOpen }) => {
+const AdminSidebar = ({ isOpen, setIsOpen, isCollapsed, setIsCollapsed }) => {
   const navigate = useNavigate();
-  const { admin, logoutAdmin } = useAuth(); // ✅ Use context
+  const { admin, logoutAdmin } = useAuth();
 
-  // --- Load saved submenu states from localStorage ---
   const [submenus, setSubmenus] = useState(() => {
     return (
       JSON.parse(localStorage.getItem("adminSidebarState")) || {
@@ -44,12 +45,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
     );
   });
 
-  // --- Persist submenu open/close state ---
   useEffect(() => {
     localStorage.setItem("adminSidebarState", JSON.stringify(submenus));
   }, [submenus]);
 
   const toggleSubmenu = (key) => {
+    if (isCollapsed) setIsCollapsed(false); // Expand if collapsed
     setSubmenus((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -59,43 +60,53 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
        isActive
          ? "bg-orange-500 text-white shadow-sm"
          : "text-gray-700 hover:bg-orange-100 hover:text-orange-600"
-     }`;
+     }
+     ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`;
 
   const handleLogout = async () => {
     await api.post("/logout.php", {}, { withCredentials: true });
-    logoutAdmin(); // clears context + redirects
+    logoutAdmin();
   };
 
-  // --- Renders submenus dynamically ---
   const renderSubMenuButton = (label, Icon, key, children) => (
     <div>
       <button
         onClick={() => toggleSubmenu(key)}
         aria-expanded={submenus[key]}
-        className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl font-medium text-sm text-gray-700 hover:bg-orange-100 hover:text-orange-600 transition-all duration-200"
+        className={`flex items-center justify-between w-full px-4 py-2.5 rounded-xl font-medium text-sm text-gray-700 hover:bg-orange-100 hover:text-orange-600 transition-all duration-200
+        ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`}
       >
         <span className="flex items-center gap-3">
-          <Icon size={18} /> {label}
+          <Icon size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>{label}</span>
         </span>
-        {submenus[key] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+        {!isCollapsed && (submenus[key] ? <ChevronDown size={18} /> : <ChevronRight size={18} />)}
       </button>
-      {submenus[key] && <div className="ml-8 mt-1 space-y-1">{children}</div>}
+      {!isCollapsed && submenus[key] && <div className="ml-8 mt-1 space-y-1">{children}</div>}
     </div>
   );
 
   const handleLinkClick = () => {
-    if (window.innerWidth < 1024) setIsOpen(false); // Auto close on mobile
+    if (window.innerWidth < 1024) setIsOpen(false);
   };
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r flex flex-col justify-between
-      transform transition-transform duration-300 ease-in-out
+      className={`fixed top-0 left-0 z-40 h-screen bg-white border-r flex flex-col justify-between
+      transform transition-all duration-300 ease-in-out
       ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      lg:translate-x-0 lg:static lg:shadow-none`}
+      lg:translate-x-0 lg:static lg:shadow-none
+      ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       aria-label="Admin Sidebar"
     >
-      {/* --- Mobile Close Button --- */}
+      {/* Desktop Collapse Toggle */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="hidden lg:flex absolute -right-3 top-10 bg-orange-500 text-white rounded-full p-1 border-2 border-white z-50 hover:scale-110 shadow-md"
+      >
+        {isCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+      </button>
+
       <button
         onClick={() => setIsOpen(false)}
         aria-label="Close sidebar"
@@ -104,231 +115,151 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         <X size={22} />
       </button>
 
-      {/* --- Header Logo --- */}
-      <div className="flex items-center justify-center py-6 border-b bg-orange-50 lg:bg-white">
+      <div className="flex items-center justify-center py-6 border-b bg-orange-50 lg:bg-white overflow-hidden">
         <img
           src={assets.brandLogo}
           alt="Admin Logo"
-          className="w-32 cursor-pointer"
+          className={`transition-all duration-300 cursor-pointer ${isCollapsed ? "lg:w-8 w-32" : "w-32"}`}
           onClick={() => navigate("/admin")}
         />
       </div>
 
-      {/* --- Navigation --- */}
-      <nav className="mt-6 space-y-1 px-2 flex-1 overflow-y-auto">
+      <nav className="mt-6 space-y-1 px-2 flex-1 overflow-y-auto no-scrollbar">
         <NavLink to="/" className={linkClasses} onClick={handleLinkClick}>
-          <ArrowLeft size={18} /> Back to Website
+          <ArrowLeft size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Back to Website</span>
         </NavLink>
 
-        <NavLink
-          to="/admin"
-          end
-          className={linkClasses}
-          onClick={handleLinkClick}
-        >
-          <LayoutDashboard size={18} /> Dashboard
+        <NavLink to="/admin" end className={linkClasses} onClick={handleLinkClick}>
+          <LayoutDashboard size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Dashboard</span>
         </NavLink>
 
-        {/* --- User Management --- */}
         {renderSubMenuButton(
           "User Management",
           Users,
           "userMgmt",
           <>
-            <NavLink
-              to="/admin/add-user"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/add-user" className={linkClasses} onClick={handleLinkClick}>
               <PlusCircle size={16} /> Add User
             </NavLink>
-            <NavLink
-              to="/admin/user-list"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/user-list" className={linkClasses} onClick={handleLinkClick}>
               <List size={16} /> User List
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Reservation --- */}
-        <NavLink
-          to="/admin/reservations"
-          className={linkClasses}
-          onClick={handleLinkClick}
-        >
-          <Calendar size={18} /> Reservations
+        <NavLink to="/admin/reservations" className={linkClasses} onClick={handleLinkClick}>
+          <Calendar size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Reservations</span>
         </NavLink>
 
-        {/* --- Occupancy --- */}
-        <NavLink
-          to="/admin/occupancy"
-          className={linkClasses}
-          onClick={handleLinkClick}
-        >
-          <BarChart3 size={18} /> Occupancy
+        <NavLink to="/admin/occupancy" className={linkClasses} onClick={handleLinkClick}>
+          <BarChart3 size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Occupancy</span>
         </NavLink>
 
-        {/* --- Visitors --- */}
-        <NavLink
-          to="/admin/visitorsOverview"
-          className={linkClasses}
-          onClick={handleLinkClick}
-        >
-          <Users2 size={18} /> Visitors
+        <NavLink to="/admin/visitorsOverview" className={linkClasses} onClick={handleLinkClick}>
+          <Users2 size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Visitors</span>
         </NavLink>
 
-        {/* --- Coupon Codes --- */}
         {renderSubMenuButton(
           "Coupon Codes",
           Gift,
           "coupon",
           <>
-            <NavLink
-              to="/admin/add-coupon"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/add-coupon" className={linkClasses} onClick={handleLinkClick}>
               <PlusCircle size={16} /> Add Coupon
             </NavLink>
-            <NavLink
-              to="/admin/coupon-list"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/coupon-list" className={linkClasses} onClick={handleLinkClick}>
               <List size={16} /> Coupon List
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Space Master --- */}
         {renderSubMenuButton(
           "Space Master",
           Building2,
           "spaceMaster",
           <>
-            <NavLink
-              to="/admin/add-space-master"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/add-space-master" className={linkClasses} onClick={handleLinkClick}>
               <PlusCircle size={16} /> Add Space Master
             </NavLink>
-            <NavLink
-              to="/admin/space-master-list"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/space-master-list" className={linkClasses} onClick={handleLinkClick}>
               <List size={16} /> Space Master List
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Contact Request --- */}
         {renderSubMenuButton(
           "Contact Request",
           Mail,
           "contact",
           <>
-            <NavLink
-              to="/admin/add-contact"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/add-contact" className={linkClasses} onClick={handleLinkClick}>
               <PlusCircle size={16} /> Add Contact
             </NavLink>
-            <NavLink
-              to="/admin/contact-list"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/contact-list" className={linkClasses} onClick={handleLinkClick}>
               <List size={16} /> Contact Request List
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Blog --- */}
         {renderSubMenuButton(
           "Blog",
           BlogText,
           "blog",
           <>
-            <NavLink
-              to="/admin/add-blog"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/add-blog" className={linkClasses} onClick={handleLinkClick}>
               <FilePlus size={16} /> Add New Blog
             </NavLink>
-            <NavLink
-              to="/admin/blog-list"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/blog-list" className={linkClasses} onClick={handleLinkClick}>
               <List size={16} /> View Blog List
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Virtual Office --- */}
         {renderSubMenuButton(
           "Virtual Office",
           CreditCard,
           "virtualOffice",
           <>
-            <NavLink
-              to="/admin/virtual-office-price"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/virtual-office-price" className={linkClasses} onClick={handleLinkClick}>
               <FileText size={16} /> Price
             </NavLink>
-            <NavLink
-              to="/admin/virtual-office-bookings"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/virtual-office-bookings" className={linkClasses} onClick={handleLinkClick}>
               <Calendar size={16} /> Bookings
             </NavLink>
-            <NavLink
-              to="/admin/virtual-office-enquiries"
-              className={linkClasses}
-              onClick={handleLinkClick}
-            >
+            <NavLink to="/admin/virtual-office-enquiries" className={linkClasses} onClick={handleLinkClick}>
               <Mail size={16} /> Enquiries
             </NavLink>
-          </>,
+          </>
         )}
 
-        {/* --- Settings --- */}
-        <NavLink
-          to="/admin/settings"
-          className={linkClasses}
-          onClick={handleLinkClick}
-        >
-          <Settings size={18} /> Settings
+        <NavLink to="/admin/settings" className={linkClasses} onClick={handleLinkClick}>
+          <Settings size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Settings</span>
         </NavLink>
       </nav>
 
-      {/* --- Footer --- */}
       <footer className="border-t bg-white">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 text-red-500 hover:bg-red-50 font-medium text-sm transition-all duration-200"
+          className={`w-full flex items-center justify-center gap-2 py-3 text-red-500 hover:bg-red-50 font-medium text-sm transition-all duration-200 
+          ${isCollapsed ? "lg:px-0" : ""}`}
         >
-          <LogOut size={18} /> Logout
+          <LogOut size={18} /> 
+          <span className={isCollapsed ? "lg:hidden block" : "block"}>Logout</span>
         </button>
       </footer>
 
-      {/* --- Copyright --- */}
-      <div className="text-center text-xs text-gray-500 py-3">
-        <p>Vayuhu Admin © {new Date().getFullYear()}</p>
-        <span className="text-orange-500">
-          {" "}
-          Managing with clarity and control.
-        </span>
-      </div>
+      {!isCollapsed && (
+        <div className="text-center text-xs text-gray-500 py-3">
+          <p>Vayuhu Admin © {new Date().getFullYear()}</p>
+          <span className="text-orange-500">Managing with clarity and control.</span>
+        </div>
+      )}
     </aside>
   );
 };

@@ -17,6 +17,7 @@ $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 // Load JWT Library
 // ------------------------------------
 require_once __DIR__ . '/vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -27,7 +28,12 @@ try {
     // JWT VERIFICATION from HttpOnly cookie
     // ------------------------------------
     if (!isset($_COOKIE['auth_token'])) {
-        throw new Exception("Authentication token missing.");
+        http_response_code(401);
+        echo json_encode([
+            "success" => false,
+            "message" => "Authentication required."
+        ]);
+        exit;
     }
 
     $token = $_COOKIE['auth_token'];
@@ -55,8 +61,12 @@ try {
 
     // SECURITY CHECK: Ensure token ID matches requested user_id
     if ($decoded_user_id !== $user_id) {
-        http_response_code(403); // Forbidden
-        throw new Exception("Unauthorized access to this dashboard.");
+        http_response_code(403);
+        echo json_encode([
+            "success" => false,
+            "message" => "Unauthorized access."
+        ]);
+        exit;
     }
 
     // ------------------------------------
@@ -89,7 +99,7 @@ try {
         WHERE wb.user_id = ?
         ORDER BY wb.created_at DESC
     ");
-    
+
     if (!$stmt) {
         throw new Exception("Database prepare() failed.");
     }
@@ -141,9 +151,8 @@ try {
 
     $stmt->close();
     $conn->close();
-
 } catch (Exception $e) {
-    if (http_response_code() == 200) http_response_code(400); 
+    if (http_response_code() == 200) http_response_code(400);
     echo json_encode([
         "success" => false,
         "message" => $e->getMessage()

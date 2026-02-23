@@ -123,6 +123,11 @@ const Testimonials = () => {
         viewport={{ once: true }}
         className="bg-gray-100 py-20 px-6 md:px-16 lg:px-28"
       >
+        {/* Section Heading */}
+        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center md:text-left">
+          Testimonials
+        </h2>
+
         {/* GOOGLE HEADER STYLE — UNCHANGED */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
@@ -177,9 +182,7 @@ const Testimonials = () => {
 
                 <div>
                   <div className="flex items-center gap-1">
-                    <p className="font-medium text-gray-800 text-sm">
-                      {review.name}
-                    </p>
+                    <p className="font-medium text-gray-800 text-sm">{review.name}</p>
                     <span className="text-blue-500 text-xs">✔</span>
                   </div>
                   <p className="text-xs text-gray-500">{review.time}</p>
@@ -200,7 +203,6 @@ const Testimonials = () => {
                 {review.review}
               </p>
 
-              {/* ONLY CHANGE — Click handler */}
               <button
                 onClick={() => setSelectedReview(review)}
                 className="text-blue-600 text-xs mt-2 hover:underline"
@@ -241,13 +243,11 @@ const Testimonials = () => {
 
                 <div>
                   <div className="flex items-center gap-1">
-                    <p className="font-semibold">
-                      {selectedReview.name}
-                    </p>
+                    <p className="font-semibold">{selectedReview.name}</p>
                     <span className="text-blue-500 text-sm">✔</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {selectedReview.time} on Google
+                    {selectedReview.name} - {selectedReview.time} on Google
                   </p>
                 </div>
               </div>
@@ -274,9 +274,7 @@ const Testimonials = () => {
                       OWNER REPLY
                     </span>
                   </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {selectedReview.ownerReply}
-                  </p>
+                  <p className="text-sm text-gray-600 mt-1">{selectedReview.ownerReply}</p>
                 </div>
               )}
             </motion.div>

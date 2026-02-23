@@ -5,7 +5,8 @@ import { Menu, Code, User } from "lucide-react";
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showDeveloper, setShowDeveloper] = useState(false); // toggle personal credit
+  const [isCollapsed, setIsCollapsed] = useState(false); // New state for desktop collapse
+  const [showDeveloper, setShowDeveloper] = useState(false);
 
   const toggleDeveloperCredit = () => {
     setShowDeveloper((prev) => !prev);
@@ -13,17 +14,22 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar Container - Width changes only on Desktop via lg prefix */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-md
-          transform transition-transform duration-300 ease-in-out
+        className={`fixed inset-y-0 left-0 z-40 bg-white shadow-md
+          transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0 lg:static lg:shadow-none`}
+          lg:translate-x-0 lg:static lg:shadow-none
+          ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
-        <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+        <AdminSidebar 
+          isOpen={sidebarOpen} 
+          setIsOpen={setSidebarOpen} 
+          isCollapsed={isCollapsed} 
+          setIsCollapsed={setIsCollapsed} 
+        />
       </div>
 
-      {/* Overlay (mobile only) */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-30 lg:hidden"
@@ -31,15 +37,9 @@ const AdminLayout = ({ children }) => {
         />
       )}
 
-      {/* Main Content */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden">
-        {/* Top Bar */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-white shadow-sm">
-          <img
-            src={assets.brandLogo}
-            alt="Admin Logo"
-            className="w-28 sm:w-32"
-          />
+          <img src={assets.brandLogo} alt="Admin Logo" className="w-28 sm:w-32" />
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-600 hover:text-orange-500"
@@ -48,14 +48,11 @@ const AdminLayout = ({ children }) => {
           </button>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-[1400px] mx-auto">{children}</div>
         </main>
 
-        {/* Footer */}
         <footer className="text-center py-3 text-xs text-orange-500 border-t border-gray-200 bg-white flex flex-col items-center gap-1">
-          {/* Team credit */}
           <div
             onClick={toggleDeveloperCredit}
             className="cursor-pointer select-none flex items-center gap-1 hover:text-orange-600 transition-all"
@@ -65,7 +62,6 @@ const AdminLayout = ({ children }) => {
             <span className="italic">Built by the Vayuhu Team</span>
           </div>
 
-          {/* Personal developer credit */}
           {showDeveloper && (
             <span className="text-gray-500 italic mt-1 flex items-center gap-1">
               <User className="w-4 h-4 inline text-orange-500" />

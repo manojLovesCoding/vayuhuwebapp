@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -8,6 +8,10 @@ const BlogPage = () => {
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // ✅ Ref for blog section
+    const blogSectionRef = useRef(null);
 
     const fetchBlogs = async () => {
         try {
@@ -18,7 +22,6 @@ const BlogPage = () => {
             const data = res.data;
 
             if (data.success) {
-                // Filter blogs with status "active" (case-insensitive)
                 const activeBlogs = data.data.filter(
                     blog => blog.status && blog.status.toLowerCase() === "active"
                 );
@@ -35,7 +38,27 @@ const BlogPage = () => {
         fetchBlogs();
     }, []);
 
-    // Helper: Format date nicely
+    // ✅ Scroll with navbar offset
+    useEffect(() => {
+        if (!loading && location.state?.scrollToBlogs && blogSectionRef.current) {
+
+            // Get fixed navbar height
+            const navbar = document.querySelector("div.fixed.left-0.w-full");
+            const navbarHeight = navbar ? navbar.offsetHeight : 80;
+
+            // Get element position
+            const elementPosition = blogSectionRef.current.offsetTop;
+
+            // Adjust position with navbar offset
+            const offsetPosition = elementPosition - navbarHeight - 20;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth",
+            });
+        }
+    }, [loading, location.state]);
+
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
@@ -48,17 +71,20 @@ const BlogPage = () => {
 
     return (
         <div className="px-6 md:px-20 lg:px-32 py-12">
-            <h1 className="text-3xl font-bold mb-8 text-center">Latest Blogs</h1>
+            <h1 className="text-3xl font-bold mb-8 text-center">
+                Latest Blogs
+            </h1>
 
-            {/* LOADING */}
             {loading ? (
                 <p className="text-gray-500 text-center">Loading...</p>
             ) : blogs.length === 0 ? (
                 <p className="text-gray-500 text-center">No blogs found.</p>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div
+                    ref={blogSectionRef}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
                     {blogs.map((blog, index) => {
-                        // Simulated date based on position
                         const simulatedDate = new Date();
                         simulatedDate.setDate(simulatedDate.getDate() - index);
 
@@ -88,7 +114,6 @@ const BlogPage = () => {
                                         {blog.blog_heading}
                                     </h2>
 
-                                    {/* Short description */}
                                     <div
                                         className="text-sm text-gray-600 line-clamp-3"
                                         dangerouslySetInnerHTML={{
@@ -96,7 +121,6 @@ const BlogPage = () => {
                                         }}
                                     />
 
-                                    {/* Footer */}
                                     <div className="mt-4 text-xs flex flex-wrap items-center justify-between gap-2">
                                         <span className="text-gray-500 whitespace-nowrap">
                                             Posted by{" "}

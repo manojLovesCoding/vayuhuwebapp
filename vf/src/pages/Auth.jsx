@@ -11,7 +11,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
- const { loginUser } = useAuth();
+  const { loginUser } = useAuth();
 
 
   // ✅ Handle login/signup
@@ -23,24 +23,25 @@ const Auth = () => {
     const payload = { email, password, ...(isLogin ? {} : { name }) };
 
     try {
-      const { data } = await api.post(url, payload); // ✅ Using Axios instance
-
+      const { data } = await api.post(url, payload);
       setMessage(data.message);
 
-       if (data.status === "success" && data.user) {
-  loginUser(data.user);
+      if (data.status === "success" && data.user) {
+        loginUser(data.user);
 
-        setTimeout(() => navigate("/"), 800);
+        // Redirect to Home and scroll to Header
+        setTimeout(() => {
+          navigate("/", { state: { scrollTo: "Header" } });
+        }, 300);
       }
     } catch (error) {
       console.error("Auth error:", error);
       setMessage(error.response?.data?.message || "Something went wrong.");
     }
   };
-
   useEffect(() => {
-  window.scrollTo({ top: 700, behavior: "smooth" });
-}, []);
+    window.scrollTo({ top: 700, behavior: "smooth" });
+  }, []);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
@@ -55,10 +56,10 @@ const Auth = () => {
       </div>
       <div className="absolute top-[260px] right-[180px] w-16 h-16 bg-orange-300 rounded-full opacity-40 rotate-anim"></div>
 
-      {/* BRAND LOGO */}
+      {/* BRAND LOGO 
       <div className="absolute top-14 flex flex-col items-center z-20 animate-fadein">
         <img src={assets.brandLogo} alt="Brand Logo" className="w-28 h-28 object-contain drop-shadow-xl animate-pop" />
-      </div>
+      </div>*/}
 
       {/* AUTH CARD */}
       <div className="relative bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl w-96 z-10 border border-orange-100">

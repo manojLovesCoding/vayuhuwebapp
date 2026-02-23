@@ -12,7 +12,11 @@ const Footer = () => {
     window.scrollTo(0, 600);
   };
 
-  // Toggle developer credit visibility
+  // ✅ UPDATED: Blog redirect with scroll state
+  const handleBlogRedirect = () => {
+    navigate("/blog", { state: { scrollToBlogs: true } });
+  };
+
   const toggleDeveloperCredit = () => {
     setShowDeveloper((prev) => !prev);
   };
@@ -34,9 +38,7 @@ const Footer = () => {
           <p className="text-sm leading-relaxed">
             At <span className="text-orange-500 font-medium">Vayuhu</span>, we’re
             building more than just workspaces — we’re creating a community where
-            innovation thrives. Whether you're a freelancer, startup, or small
-            team, our space is designed to help you work, connect, and grow
-            together.
+            innovation thrives.
           </p>
         </div>
 
@@ -47,7 +49,6 @@ const Footer = () => {
             Explore Our Space
           </h3>
 
-          {/* Gallery Button */}
           <button
             onClick={handleGalleryRedirect}
             className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-full font-medium transition-all duration-300 mb-3"
@@ -55,16 +56,15 @@ const Footer = () => {
             View Gallery
           </button>
 
-          {/* Blog Button */}
           <button
-            onClick={() => navigate("/blog")}
+            onClick={handleBlogRedirect}
             className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-full font-medium transition-all duration-300"
           >
             Visit Blog
           </button>
         </div>
 
-        {/* Contact Info */}
+        {/* Contact Info (unchanged) */}
         <div className="md:w-1/3">
           <h3 className="text-white text-lg font-semibold mb-4">Contact Us</h3>
           <div className="flex flex-col gap-3 text-sm">
@@ -91,12 +91,11 @@ const Footer = () => {
         </div>
       </div>
 
+      {/* Bottom section unchanged */}
       <div className="border-t border-gray-700 mt-12 py-6 text-center text-sm text-gray-500 flex flex-col gap-2 items-center">
-        {/* Clickable copyright and passion text */}
         <span
           onClick={toggleDeveloperCredit}
           className="cursor-pointer select-none hover:text-white transition"
-          title="Click to see developer credit"
         >
           © {new Date().getFullYear()} Vayuhu. All Rights Reserved.
         </span>
@@ -104,12 +103,10 @@ const Footer = () => {
         <span
           onClick={toggleDeveloperCredit}
           className="cursor-pointer select-none text-orange-500 hover:text-orange-400 transition"
-          title="Click to see developer credit"
         >
           Built with passion for modern professionals.
         </span>
 
-        {/* Conditionally show developer name */}
         {showDeveloper && (
           <span className="flex flex-wrap justify-center items-center gap-1 text-gray-400 mt-1">
             Designed & coded with <Heart size={16} className="text-orange-500" /> by{" "}

@@ -14,7 +14,7 @@ const Navbar = () => {
   const [showCoupon, setShowCoupon] = useState(true);
   const [coupon, setCoupon] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("Header"); // Track active section
+  const [activeSection, setActiveSection] = useState("Header");
 
   const { cart } = useCart();
   const { user } = useAuth();
@@ -51,15 +51,13 @@ const Navbar = () => {
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (el) {
-      setActiveSection(id); // Set active state immediately on click
+      setActiveSection(id);
       el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   const handleNavClick = (id) => {
     setShowMobileMenu(false);
-
-    // 1. Manually set the active section immediately for instant UI feedback
     setActiveSection(id);
 
     if (location.pathname !== "/") {
@@ -69,8 +67,7 @@ const Navbar = () => {
         if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 400);
     } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
+      scrollToSection(id);
     }
   };
 
@@ -84,24 +81,24 @@ const Navbar = () => {
     }
   };
 
-  /* ---------------- IntersectionObserver for active section ---------------- */
+  /* ---------------- IntersectionObserver ---------------- */
   useEffect(() => {
-    const sectionIds = ["Header", "About", "WorkSpaces", "Testimonials", "VirtualOfficeServices"];
+    const sectionIds = [
+      "Header",
+      "About",
+      "WorkSpaces",
+      "Testimonials",
+      "VirtualOfficeServices",
+    ];
 
-    const observerOptions = {
-      // rootMargin: Top Right Bottom Left
-      // This tells the observer: "Only trigger when a section enters the top 30% of the viewport"
-      rootMargin: "-20% 0px -70% 0px",
-      threshold: 0
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
-        }
-      });
-    }, observerOptions);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveSection(entry.target.id);
+        });
+      },
+      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+    );
 
     sectionIds.forEach((id) => {
       const el = document.getElementById(id);
@@ -145,8 +142,7 @@ const Navbar = () => {
         <div className="fixed top-0 left-0 w-full z-[60] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center text-center">
           🎉 Apply coupon{" "}
           <span className="underline mx-1">{coupon.coupon_code}</span>
-          and get{" "}
-          <span className="font-bold mx-1">{coupon.discount}% OFF</span>
+          and get <span className="font-bold mx-1">{coupon.discount}% OFF</span>
           + ₹100 for Video Conferencing!
           <button
             onClick={() => setShowCoupon(false)}
@@ -160,8 +156,7 @@ const Navbar = () => {
       {/* ---------------- Navbar ---------------- */}
       <div
         className={`fixed left-0 w-full z-50 transition-all duration-300 ${isBannerVisible ? "top-10" : "top-0"
-          } ${isScrolled ? "bg-white/70 backdrop-blur-lg shadow-md" : "bg-transparent"
-          }`}
+          } ${isScrolled ? "bg-white/70 backdrop-blur-lg shadow-md" : "bg-transparent"}`}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between py-4 px-6 lg:px-12">
           {/* Logo */}
@@ -177,7 +172,6 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            {/* Grouped nav items with border */}
             <div className="flex border border-orange-600 rounded-full overflow-hidden text-[15px] font-medium">
               {navItems.slice(0, 5).map((item, i) => (
                 <button
@@ -203,6 +197,12 @@ const Navbar = () => {
                 {navItems[5].label}
               </motion.button>
             )}
+
+            {/* Floating Cart Button (inline) */}
+            <div className="ml-6">
+              <FloatingCartButton onClick={() => setCartOpen(true)} />
+            </div>
+
 
             {/* Sign Up / Login CTA */}
             <motion.button
@@ -240,7 +240,6 @@ const Navbar = () => {
         />
 
         <ul className="flex flex-col gap-4 text-white text-lg font-medium">
-          {/* Mobile grouped nav items */}
           {navItems.slice(0, 5).map((item, i) => (
             <button
               key={i}
@@ -255,7 +254,6 @@ const Navbar = () => {
             </button>
           ))}
 
-          {/* Virtual Tour CTA */}
           {navItems[5] && (
             <motion.button
               onClick={() => {
@@ -268,7 +266,16 @@ const Navbar = () => {
             </motion.button>
           )}
 
-          {/* Sign Up / Login CTA */}
+          {/* Floating Cart Button (mobile menu) */}
+          <div className="mt-4 flex justify-center">
+            <FloatingCartButton
+              onClick={() => {
+                setCartOpen(true);
+                setShowMobileMenu(false); // Close the mobile menu
+              }}
+            />
+          </div>
+
           <motion.button
             onClick={() => {
               setShowMobileMenu(false);
@@ -281,11 +288,7 @@ const Navbar = () => {
         </ul>
       </div>
 
-      {/* ---------------- Floating Cart ---------------- */}
-      <div className="fixed bottom-10 right-6 z-[55]">
-        <FloatingCartButton onClick={() => setCartOpen(true)} />
-      </div>
-
+      {/* ---------------- Cart Drawer ---------------- */}
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   );

@@ -74,6 +74,8 @@ import Amenities from "./components/Amenities";
 import EditContact from "./pages/Admin/EditContact";
 import AdminVisitorsOverview from "./pages/Admin/AdminVisitorsOverview";
 
+
+
 const Layout = ({ children }) => {
   const location = useLocation();
 
@@ -85,6 +87,7 @@ const Layout = ({ children }) => {
     "/visitors",
     "/visitors-list",
     "/admin",
+    "/auth", // hide header on login/signup page
   ];
 
   const hideHeader = hideHeaderRoutes.some((route) =>
@@ -94,11 +97,13 @@ const Layout = ({ children }) => {
   return (
     <div className="w-full overflow-hidden">
       <ToastContainer />
-      {!hideHeader && <Header />}
+      {!hideHeader && <Header id="Header" />}
       {children}
     </div>
   );
 };
+
+
 
 const App = () => {
   return (
