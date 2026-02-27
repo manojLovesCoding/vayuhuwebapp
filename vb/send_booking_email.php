@@ -28,9 +28,19 @@ use PHPMailer\PHPMailer\Exception;
 
 try {
     // -----------------------------
-    // JWT Verification FROM COOKIE
+    // JWT Verification (Updated Fallback)
     // -----------------------------
-    $token = $_COOKIE['auth_token'] ?? null;  // <-- read JWT from HttpOnly cookie
+    // 1. Try to read JWT from HttpOnly cookie
+    $token = $_COOKIE['auth_token'] ?? null;
+
+    // 2. Fallback: check Authorization header for backward compatibility
+    if (!$token) {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+        if ($authHeader) {
+            $token = str_replace('Bearer ', '', $authHeader);
+        }
+    }
 
     if (!$token) {
         http_response_code(401);

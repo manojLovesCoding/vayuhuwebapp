@@ -2,41 +2,40 @@
 // -------------------------
 // Load Environment & CORS
 // -------------------------
-require_once __DIR__ . '/config/env.php';   // Loads $_ENV['JWT_SECRET']
-require_once __DIR__ . '/config/cors.php';  // Handles CORS preflight and headers
+require_once __DIR__ . '/config/env.php';   
+require_once __DIR__ . '/config/cors.php';  
 
-// -------------------------
-// Prevent PHP warnings from breaking JSON
-// -------------------------
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// -------------------------
-// JWT Library
-// -------------------------
 require_once __DIR__ . '/vendor/autoload.php';
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-// -------------------------
-// Use secret from .env
-// -------------------------
 $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 try {
-    $headers = getallheaders();
-    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+    // ---------------- JWT CHECK (Updated) ----------------
+    // 1. Try to get token from Cookie first (for HttpOnly cookies)
+    $token = $_COOKIE['auth_token'] ?? null;
 
-    if (!$authHeader) {
-        http_response_code(401);
-        throw new Exception("Authorization header missing.");
+    // 2. Fallback: Try to get token from Authorization header
+    if (!$token) {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+
+        if ($authHeader) {
+            if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                $token = $matches[1];
+            } else {
+                $token = $authHeader;
+            }
+        }
     }
 
-    // Extract token from "Bearer <token>" or fallback
-    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-        $token = $matches[1];
-    } else {
-        $token = $authHeader;
+    if (!$token) {
+        http_response_code(401);
+        throw new Exception("Authorization missing. Please log in again.");
     }
 
     try {
@@ -44,7 +43,7 @@ try {
         $userData = (array)$decoded->data;
     } catch (Exception $e) {
         http_response_code(401);
-        throw new Exception("Invalid or expired token.");
+        throw new Exception("Invalid or expired session. Please log in again.");
     }
 
     // -------------------------
@@ -52,9 +51,7 @@ try {
     // -------------------------
     include 'db.php';
 
-    // -------------------------
     // Parse JSON input
-    // -------------------------
     $inputData = json_decode(file_get_contents("php://input"), true);
     if (json_last_error() !== JSON_ERROR_NONE) throw new Exception("Invalid JSON payload.");
 
@@ -76,30 +73,24 @@ try {
         : 0;
 
     foreach ($bookings as $index => $data) {
-
         $user_id         = (int)($data['user_id'] ?? 0);
         $space_id        = (int)($data['space_id'] ?? 0);
-
         $seat_codes_raw  = $data['selected_codes'] ?? $data['seat_codes'] ?? '';
         $seat_codes      = is_array($seat_codes_raw) ? implode(", ", $seat_codes_raw) : trim($seat_codes_raw);
-
         $workspace_title = trim($data['workspace_title'] ?? '');
         $plan_type       = strtolower(trim($data['plan_type'] ?? ''));
         $start_date      = trim($data['start_date'] ?? '');
         $end_date        = trim($data['end_date'] ?? '');
         $start_time      = trim($data['start_time'] ?? null);
         $end_time        = trim($data['end_time'] ?? null);
-
         $total_days      = (int)($data['total_days'] ?? 1);
         $total_hours     = (int)($data['total_hours'] ?? 1);
         $num_attendees   = (int)($data['num_attendees'] ?? 1);
         $price_per_unit  = (float)($data['price_per_unit'] ?? 0);
-
         $base_amount     = round((float)($data['base_amount'] ?? 0));
         $gst_amount      = round((float)($data['gst_amount'] ?? 0));
         $discount_amount = round((float)($data['discount_amount'] ?? 0));
         $final_amount    = round((float)($data['final_amount'] ?? 0));
-
         $coupon_code     = trim($data['coupon_code'] ?? '');
         $referral_source = trim($data['referral_source'] ?? '');
         $terms_accepted  = (int)($data['terms_accepted'] ?? 0);
@@ -152,28 +143,11 @@ try {
 
         $stmt->bind_param(
             "siisssssssiidddddssiss",
-            $booking_id,
-            $user_id,
-            $space_id,
-            $seat_codes,
-            $workspace_title,
-            $plan_type,
-            $start_date,
-            $end_date,
-            $start_time,
-            $end_time,
-            $total_days,
-            $total_hours,
-            $num_attendees,
-            $price_per_unit,
-            $base_amount,
-            $gst_amount,
-            $discount_amount,
-            $final_amount,
-            $coupon_code,
-            $referral_source,
-            $terms_accepted,
-            $status
+            $booking_id, $user_id, $space_id, $seat_codes, $workspace_title, $plan_type,
+            $start_date, $end_date, $start_time, $end_time,
+            $total_days, $total_hours, $num_attendees,
+            $price_per_unit, $base_amount, $gst_amount, $discount_amount, $final_amount,
+            $coupon_code, $referral_source, $terms_accepted, $status
         );
 
         if (!$stmt->execute()) {
@@ -196,11 +170,7 @@ try {
         $conn->rollback();
         $conn->close();
     }
-
     http_response_code(strpos($e->getMessage(), "token") !== false ? 401 : 400);
-
-    echo json_encode([
-        "success" => false,
-        "message" => $e->getMessage()
-    ]);
+    echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
+?>

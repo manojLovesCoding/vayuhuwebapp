@@ -754,7 +754,10 @@ const WorkspacePricing = () => {
       )}
       {!loading && !error && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
-          {groupedWorkspaces.map((group, idx) => (
+          {/*{groupedWorkspaces.map((group, idx) => (
+            <motion.div
+              key={`${group.title}-${idx}`}*/}
+          {groupedWorkspaces.slice(-1).concat(groupedWorkspaces.slice(0, -1)).map((group, idx) => (
             <motion.div
               key={`${group.title}-${idx}`}
               initial={{ opacity: 0, y: 40 }}
@@ -784,17 +787,19 @@ const WorkspacePricing = () => {
                   {group.title}
                 </h3>
 
-                <p className="text-gray-200 text-sm mb-3 line-clamp-2">
+                {/*<p className="text-gray-200 text-sm mb-3 line-clamp-2">
                   {group.desc}
-                </p>
+                </p>*/}
 
-                <p className="text-xs text-gray-300 mb-4">
+                <p className="text-xs font-medium text-white mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
                   {group.items.length > 1 ? (
                     `${group.items.length} space options available`
                   ) : (
-                    <>Code: {group.items[0].code}</>
+                    <>Code: <span className="text-orange-400 font-bold">{group.items[0].code}</span></>
                   )}
                 </p>
+
 
                 {/* Buttons */}
                 <div className="flex flex-wrap gap-3">
@@ -989,8 +994,8 @@ const WorkspacePricing = () => {
                       );
                     }}
                     className={`flex-1 sm:flex-none px-5 py-2 rounded-lg font-semibold transition-all ${codeSelectModal.selectedIds.length > 0
-                        ? "bg-orange-500 text-white hover:bg-orange-600"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? "bg-orange-500 text-white hover:bg-orange-600"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
                       }`}
                   >
                     Confirm
@@ -1638,7 +1643,7 @@ const WorkspacePricing = () => {
 
                   <button
                     onClick={async () => {
-                      // ✅ Start of Pay & Book logical chain using Axios
+                      // ✅ Start of Pay & Book logical chain
                       try {
                         const availabilityResponse = await axios.post(
                           `${API_BASE_URL}/check_workspace_availability.php`,
@@ -1651,20 +1656,15 @@ const WorkspacePricing = () => {
                             end_time: endTime,
                             all_space_ids: modalData.allIds || [modalData.id],
                           },
-                          { withCredentials: true }, // important for HttpOnly cookie
+                          { withCredentials: true }
                         );
 
                         const availData = availabilityResponse.data;
 
                         if (!availData.success) {
                           if (availData.available_slots?.length) {
-                            const slots = availData.available_slots
-                              .map((slot) => `• ${slot}`)
-                              .join("\n");
-                            toast.error(
-                              `${availData.message}\n\nAvailable Slots:\n${slots}`,
-                              { autoClose: 5000 },
-                            );
+                            const slots = availData.available_slots.map((slot) => `• ${slot}`).join("\n");
+                            toast.error(`${availData.message}\n\nAvailable Slots:\n${slots}`, { autoClose: 5000 });
                           } else {
                             toast.error(availData.message);
                           }
@@ -1673,8 +1673,7 @@ const WorkspacePricing = () => {
 
                         // Load Razorpay Script
                         const script = document.createElement("script");
-                        script.src =
-                          "https://checkout.razorpay.com/v1/checkout.js";
+                        script.src = "https://checkout.razorpay.com/v1/checkout.js";
                         script.onload = async () => {
                           const bookingData = {
                             user_id: getUserId(),
@@ -1700,18 +1699,14 @@ const WorkspacePricing = () => {
                             seat_codes: modalData.selectedCodes,
                           };
 
-                          // 1. Create Razorpay Order
                           const orderRes = await axios.post(
                             `${API_BASE_URL}/create_razorpay_order.php`,
-                            {
-                              amount: bookingData.final_amount,
-                            },
-                            { withCredentials: true }, // important for HttpOnly cookie
+                            { amount: bookingData.final_amount },
+                            { withCredentials: true }
                           );
 
                           const orderData = orderRes.data;
-                          if (!orderData.success)
-                            throw new Error(orderData.message);
+                          if (!orderData.success) throw new Error(orderData.message);
 
                           const options = {
                             key: orderData.key,
@@ -1725,33 +1720,28 @@ const WorkspacePricing = () => {
                               const verifyRes = await axios.post(
                                 `${API_BASE_URL}/verify_payment.php`,
                                 response,
-                                { withCredentials: true }, // important for HttpOnly cookie
+                                { withCredentials: true }
                               );
 
                               if (verifyRes.data.success) {
-                                // 🔑 Attach payment_id to booking data
                                 const bookingWithPayment = {
                                   ...bookingData,
                                   payment_id: response.razorpay_payment_id,
                                 };
+
                                 // 2. Finalize Booking
                                 const finalBooking = await axios.post(
                                   `${API_BASE_URL}/add_workspace_booking.php`,
                                   bookingWithPayment,
-                                  { withCredentials: true }, // important for HttpOnly cookie
+                                  { withCredentials: true }
                                 );
 
                                 if (finalBooking.data.success) {
                                   toast.success("🎉 Booking confirmed!");
-                                  const userData = JSON.parse(
-                                    localStorage.getItem("user"),
-                                  );
-                                  const bookingId =
-                                    finalBooking.data.booking_id ||
-                                    finalBooking.data.id ||
-                                    0;
+                                  const userData = JSON.parse(localStorage.getItem("user"));
+                                  const bookingId = finalBooking.data.booking_id || finalBooking.data.id || 0;
 
-                                  // 4. Send Confirmation Email
+                                  // 3. Send Confirmation Email
                                   await axios.post(
                                     `${API_BASE_URL}/send_booking_email.php`,
                                     {
@@ -1765,18 +1755,17 @@ const WorkspacePricing = () => {
                                       end_date: endDate,
                                       start_time: startTime,
                                       end_time: endTime,
-                                      total_amount: finalTotal,
+                                      total_amount: Number(finalTotal).toFixed(2), // ✅ Fixed decimals
                                       seat_codes: modalData.selectedCodes,
                                     },
-                                    { withCredentials: true }, // important for HttpOnly cookie
+                                    { withCredentials: true }
                                   );
 
-                                  setTimeout(() => resetState(), 2000);
+                                  // ✅ STEP 4: CLEANUP AND REDIRECT
+                                  resetState();
+                                  navigate("/dashboard"); // ✅ Immediate redirect
                                 } else {
-                                  toast.error(
-                                    finalBooking.data.message ||
-                                    "Booking registration failed",
-                                  );
+                                  toast.error(finalBooking.data.message || "Booking registration failed");
                                 }
                               } else {
                                 toast.error("Payment verification failed!");
@@ -1788,10 +1777,7 @@ const WorkspacePricing = () => {
                         };
                         document.body.appendChild(script);
                       } catch (err) {
-                        toast.error(
-                          "Process failed: " +
-                          (err.response?.data?.message || err.message),
-                        );
+                        toast.error("Process failed: " + (err.response?.data?.message || err.message));
                       }
                     }}
                     className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"

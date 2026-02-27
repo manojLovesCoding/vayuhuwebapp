@@ -21,14 +21,16 @@ use Firebase\JWT\Key;
 $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 // ---------------- JWT CHECK ----------------
-// Read JWT from HttpOnly cookie
+// Priority 1: Read JWT from HttpOnly cookie
 $token = $_COOKIE['auth_token'] ?? null;
 
-// Fallback (optional): check Authorization header for backward compatibility
-$headers = getallheaders();
-$authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
-if (!$token && $authHeader) {
-    $token = str_replace('Bearer ', '', $authHeader);
+// Priority 2: Fallback to Authorization header
+if (!$token) {
+    $headers = getallheaders();
+    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+    if ($authHeader) {
+        $token = str_replace('Bearer ', '', $authHeader);
+    }
 }
 
 if (!$token) {
@@ -64,9 +66,9 @@ try {
     ]);
 
 } catch (SignatureVerificationError $e) {
-
     echo json_encode([
         "success" => false,
-        "message" => $e->getMessage()
+        "message" => "Signature verification failed: " . $e->getMessage()
     ]);
 }
+?>
