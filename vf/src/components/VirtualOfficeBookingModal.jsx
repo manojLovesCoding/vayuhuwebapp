@@ -20,7 +20,7 @@ const VirtualOfficeBookingModal = ({ isOpen, onClose }) => {
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
 
-  const token = localStorage.getItem("userToken");
+  const token = localStorage.getItem("user");
   const today = new Date().toISOString().split("T")[0];
 
   const loadRazorpayScript = () => {

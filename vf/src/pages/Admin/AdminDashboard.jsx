@@ -9,7 +9,29 @@ const API_URL = import.meta.env.VITE_API_URL;
 // Helper Functions
 const formatDate = (dateStr) =>
   dateStr ? new Date(dateStr).toLocaleDateString("en-GB") : "-";
+
 const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString()}`;
+
+// New helper for formatting booked_on with date + 12-hour time
+const formatBookedOn = (datetimeStr) => {
+  if (!datetimeStr) return "-";
+  const dt = new Date(datetimeStr.replace(" ", "T"));
+  if (isNaN(dt)) return datetimeStr;
+
+  const datePart = dt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  const timePart = dt.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${datePart} ${timePart}`;
+};
 
 // Reservations Table (Memoized)
 const ReservationsTable = React.memo(({ reservations }) => (
@@ -46,20 +68,19 @@ const ReservationsTable = React.memo(({ reservations }) => (
             <td className="p-2 border">{r.space}</td>
             <td className="p-2 border">{r.space_code}</td>
             <td className="p-2 border">{r.pack}</td>
-            {/*<td className="p-2 border">{formatDate(r.date)}</td> */}
             <td className="py-2 px-4 border whitespace-nowrap">
               {r.date && r.end_date
                 ? `${formatDate(r.date)} - ${formatDate(r.end_date)}`
                 : "-"}
             </td>
-
             <td className="p-2 border">{r.timings}</td>
             <td className="p-2 border">{formatCurrency(r.amount)}</td>
             <td className="p-2 border">{formatCurrency(r.discount)}</td>
             <td className="p-2 border font-medium text-orange-600">
               {formatCurrency(r.final_total)}
             </td>
-            <td className="p-2 border">{formatDate(r.booked_on)}</td>
+            {/* Updated here: format booked_on with date + 12-hour time */}
+            <td className="p-2 border">{formatBookedOn(r.booked_on)}</td>
           </tr>
         ))}
       </tbody>
@@ -154,7 +175,6 @@ const AdminDashboard = () => {
       return endDate >= now;
     });
   }, [reservations]);
-
 
   // Chart Options (Memoized)
   const chartOptions = useMemo(

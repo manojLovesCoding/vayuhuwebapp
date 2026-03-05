@@ -5,6 +5,36 @@ import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
+// Helper: Format date string to DD/MM/YYYY
+const formatDate = (dateStr) => {
+  if (!dateStr) return "-";
+  const dt = new Date(dateStr);
+  if (isNaN(dt)) return dateStr;
+  return dt.toLocaleDateString("en-GB");
+};
+
+// Helper: Format booked_on to 'MMM DD, YYYY hh:mm AM/PM'
+const formatBookedOn = (datetimeStr) => {
+  if (!datetimeStr) return "-";
+  // Replace space with T for ISO parsing if needed
+  const dt = new Date(datetimeStr.replace(" ", "T"));
+  if (isNaN(dt)) return datetimeStr;
+
+  const datePart = dt.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  const timePart = dt.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return `${datePart} ${timePart}`;
+};
+
 const Reservations = () => {
   const [reservations, setReservations] = useState([]);
   const [search, setSearch] = useState("");
@@ -25,7 +55,7 @@ const Reservations = () => {
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          "Something went wrong while fetching reservations!",
+        "Something went wrong while fetching reservations!",
       );
     }
   };
@@ -53,10 +83,6 @@ const Reservations = () => {
   );
   const totalPages = Math.ceil(filteredReservations.length / entriesPerPage);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("en-GB");
-  };
 
   return (
     <div className="p-4 md:p-6 mt-10">
@@ -128,7 +154,7 @@ const Reservations = () => {
                   <b>Total:</b> ₹{res.final_total}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Booked on: {res.booked_on}
+                  Booked on: {formatBookedOn(res.booked_on)}
                 </p>
               </div>
             </div>
@@ -152,10 +178,10 @@ const Reservations = () => {
               <th className="border px-4 py-2">Dates</th>
               <th className="border px-4 py-2">Time</th>
               <th className="border px-4 py-2 text-right">Amount</th>
-              <th className="border px-4 py-2 hidden lg:table-cell text-right">
+              <th className="border px-4 py-2 hidden lg:table-cell text-green-600 text-right">
                 Discount
               </th>
-              <th className="border px-4 py-2 text-right">Total</th>
+              <th className="border px-4 py-2 text-right font-bold">Total</th>
               <th className="border px-4 py-2">Booked</th>
             </tr>
           </thead>
@@ -193,7 +219,7 @@ const Reservations = () => {
                     ₹{res.final_total}
                   </td>
                   <td className="border px-4 py-2 text-xs text-gray-500">
-                    {res.booked_on}
+                    {formatBookedOn(res.booked_on)}
                   </td>
                 </tr>
               ))
@@ -229,20 +255,15 @@ const Reservations = () => {
             <button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === i + 1
-                  ? "bg-orange-500 text-white"
-                  : ""
-              }`}
+              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-orange-500 text-white" : ""
+                }`}
             >
               {i + 1}
             </button>
           ))}
 
           <button
-            onClick={() =>
-              setCurrentPage((p) => Math.min(p + 1, totalPages))
-            }
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
             className="px-3 py-1 border rounded disabled:opacity-50"
           >

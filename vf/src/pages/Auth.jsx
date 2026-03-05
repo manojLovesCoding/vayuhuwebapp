@@ -10,11 +10,11 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [toast, setToast] = useState(""); // Toast message
+  const [showToast, setShowToast] = useState(false); // Control toast animation
   const navigate = useNavigate();
   const { loginUser } = useAuth();
 
-
-  // ✅ Handle login/signup
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -29,7 +29,6 @@ const Auth = () => {
       if (data.status === "success" && data.user) {
         loginUser(data.user);
 
-        // Redirect to Home and scroll to Header
         setTimeout(() => {
           navigate("/", { state: { scrollTo: "Header" } });
         }, 300);
@@ -39,6 +38,13 @@ const Auth = () => {
       setMessage(error.response?.data?.message || "Something went wrong.");
     }
   };
+
+  const handleForgotPassword = () => {
+    setToast("Please contact Front Desk");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000); // Fade out after 4s
+  };
+
   useEffect(() => {
     window.scrollTo({ top: 700, behavior: "smooth" });
   }, []);
@@ -56,10 +62,10 @@ const Auth = () => {
       </div>
       <div className="absolute top-[260px] right-[180px] w-16 h-16 bg-orange-300 rounded-full opacity-40 rotate-anim"></div>
 
-      {/* BRAND LOGO 
-      <div className="absolute top-14 flex flex-col items-center z-20 animate-fadein">
+      {/* BRAND LOGO */}
+      {/* <div className="absolute top-14 flex flex-col items-center z-20 animate-fadein">
         <img src={assets.brandLogo} alt="Brand Logo" className="w-28 h-28 object-contain drop-shadow-xl animate-pop" />
-      </div>*/}
+      </div> */}
 
       {/* AUTH CARD */}
       <div className="relative bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl w-96 z-10 border border-orange-100">
@@ -93,16 +99,42 @@ const Auth = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border p-3 mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="w-full border p-3 mb-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
 
-          <button type="submit" className="w-full bg-orange-500 shadow-lg text-white font-semibold py-3 rounded-lg hover:bg-orange-600 hover:shadow-xl transition-all">
+          {/* Forgot Password Link */}
+          {isLogin && (
+            <p
+              onClick={handleForgotPassword}
+              className="text-right text-sm mb-4 text-orange-500 cursor-pointer hover:underline"
+            >
+              Forgot Password?
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-orange-500 shadow-lg text-white font-semibold py-3 rounded-lg hover:bg-orange-600 hover:shadow-xl transition-all"
+          >
             {isLogin ? "Login" : "Sign Up"}
           </button>
 
-          {message && <p className="mt-4 text-center text-sm font-medium text-gray-700">{message}</p>}
+          {message && (
+            <p className="mt-4 text-center text-sm font-medium text-gray-700">{message}</p>
+          )}
         </form>
+
+        {/* Toast Notification with slide/fade animation */}
+        {toast && (
+          <div
+            className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded shadow-lg transition-all duration-500 ${
+              showToast ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+            }`}
+          >
+            {toast}
+          </div>
+        )}
 
         <p className="text-center text-sm mt-6 text-gray-700">
           {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
