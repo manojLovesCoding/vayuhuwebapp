@@ -11,20 +11,18 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (newItem) => {
     setCart((prev) => {
-      // Find if this specific workspace + plan is already in the cart
-      const existingIndex = prev.findIndex(
-        (i) => i.id === newItem.id && i.plan_type === newItem.plan_type
-      );
+      /**
+       * REQUIREMENT SOLUTION:
+       * To allow different timings for the same workspace (e.g., Video Conferencing),
+       * we generate a unique cartId if it doesn't already exist.
+       * We also remove the logic that replaces items with the same workspace ID.
+       */
+      const uniqueItem = {
+        ...newItem,
+        cartId: newItem.cartId || `${newItem.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
 
-      let newCart;
-      if (existingIndex !== -1) {
-        // Update existing item (remembers the new seat selection)
-        newCart = [...prev];
-        newCart[existingIndex] = newItem;
-      } else {
-        // Add new item
-        newCart = [...prev, newItem];
-      }
+      const newCart = [...prev, uniqueItem];
 
       // Save updated cart to localStorage
       localStorage.setItem("cart", JSON.stringify(newCart));
@@ -32,9 +30,13 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  const removeFromCart = (id) => {
+  const removeFromCart = (cartId) => {
     setCart((prev) => {
-      const newCart = prev.filter((i) => i.id !== id);
+      /**
+       * REQUIREMENT SOLUTION:
+       * Filter items using the unique cartId instead of the generic workspace id.
+       */
+      const newCart = prev.filter((i) => (i.cartId || i.id) !== cartId);
       localStorage.setItem("cart", JSON.stringify(newCart));
       return newCart;
     });
