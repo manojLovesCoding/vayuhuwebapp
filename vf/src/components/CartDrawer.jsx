@@ -12,7 +12,6 @@ const CartDrawer = ({ open, onClose }) => {
   const { cart, removeFromCart, clearCart, totalAmount } = useCart();
   const navigate = useNavigate();
 
-  // ✅ Optimization: Memoize calculations and format to 2 decimal places
   const { subtotal, gst } = useMemo(() => {
     const sub = totalAmount / 1.18;
     const gstVal = totalAmount - sub;
@@ -28,14 +27,15 @@ const CartDrawer = ({ open, onClose }) => {
     if (open) {
       setBreakdowns(prev => {
         const next = {};
-        cart.forEach(item => { next[item.id] = prev[item.id] || false; });
+        // ✅ Use item.cartId instead of item.id for unique UI state
+        cart.forEach(item => { next[item.cartId || item.id] = prev[item.cartId || item.id] || false; });
         return next;
       });
     }
   }, [cart, open]);
 
-  const toggleBreakdown = useCallback((id) => {
-    setBreakdowns(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleBreakdown = useCallback((cartId) => {
+    setBreakdowns(prev => ({ ...prev, [cartId]: !prev[cartId] }));
   }, []);
 
   const loadRazorpayScript = useCallback(() => {
@@ -52,11 +52,9 @@ const CartDrawer = ({ open, onClose }) => {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return toast.error("Your cart is empty!");
-
     const toastId = toast.loading("Verifying availability...");
 
     try {
-      // Parallel availability checks
       const availabilityChecks = cart.map(item =>
         axios.post(`${API_URL}/check_workspace_availability.php`, {
           space_id: item.id,
@@ -84,7 +82,6 @@ const CartDrawer = ({ open, onClose }) => {
       }
 
       toast.dismiss(toastId);
-
       const loaded = await loadRazorpayScript();
       if (!loaded) throw new Error("Razorpay SDK failed to load.");
 
@@ -108,7 +105,6 @@ const CartDrawer = ({ open, onClose }) => {
         handler: async function (response) {
           try {
             await axios.post(`${API_URL}/verify_payment.php`, response, { withCredentials: true });
-
             const user = JSON.parse(localStorage.getItem("user"));
 
             const bulkBookingData = cart.map((item) => {
@@ -201,11 +197,13 @@ const CartDrawer = ({ open, onClose }) => {
               ) : (
                 cart.map((item) => (
                   <CartItem
-                    key={item.id}
+                    // ✅ Use unique cartId for the key
+                    key={item.cartId || item.id}
                     item={item}
                     removeFromCart={removeFromCart}
-                    isOpen={breakdowns[item.id]}
-                    toggle={() => toggleBreakdown(item.id)}
+                    // ✅ Use unique cartId for toggle state
+                    isOpen={breakdowns[item.cartId || item.id]}
+                    toggle={() => toggleBreakdown(item.cartId || item.id)}
                   />
                 ))
               )}
@@ -243,7 +241,8 @@ const CartItem = ({ item, removeFromCart, isOpen, toggle }) => {
     <motion.div layout className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 relative group">
       <div className="flex justify-between items-start mb-2">
         <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded tracking-wide">{item.plan_type}</span>
-        <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+        {/* ✅ Use cartId for removal if available */}
+        <button onClick={() => removeFromCart(item.cartId || item.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
       </div>
       <h4 className="font-bold text-gray-900 text-base mb-2">{item.title}</h4>
       <div className="grid grid-cols-1 gap-1 text-gray-500 text-sm">
