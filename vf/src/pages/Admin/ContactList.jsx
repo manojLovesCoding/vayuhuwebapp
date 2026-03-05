@@ -35,6 +35,28 @@ const ContactList = () => {
     return matchesStatus && matchesSearch;
   });
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this contact?")) return;
+
+    try {
+      const response = await axios.post(
+        `${API_BASE}/delete_contact.php`,
+        { id },
+        { withCredentials: true } // ✅ send HttpOnly cookies
+      );
+
+      if (response.data.success) {
+        setContacts(contacts.filter((c) => c.id !== id));
+        alert("Contact deleted successfully");
+      } else {
+        alert(response.data.message || "Failed to delete contact");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Something went wrong while deleting contact");
+    }
+  };
+
   return (
     <div className="p-4 sm:p-8 bg-white rounded-lg shadow-sm border-t">
       {/* Header */}
@@ -56,11 +78,10 @@ const ContactList = () => {
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 border rounded text-sm sm:text-base transition ${
-              filter === status
-                ? "bg-orange-500 text-white border-orange-500"
-                : "border-orange-400 text-orange-500 hover:bg-orange-50"
-            }`}
+            className={`px-4 py-2 border rounded text-sm sm:text-base transition ${filter === status
+              ? "bg-orange-500 text-white border-orange-500"
+              : "border-orange-400 text-orange-500 hover:bg-orange-50"
+              }`}
           >
             {status}
           </button>
@@ -104,6 +125,7 @@ const ContactList = () => {
               <th className="py-2 px-3">Status</th>
               <th className="py-2 px-3">Comments</th>
               <th className="py-2 px-3">Edit</th>
+              <th className="py-2 px-3">Delete</th>
             </tr>
           </thead>
           <tbody>
@@ -137,6 +159,14 @@ const ContactList = () => {
                       onClick={() => navigate(`/admin/edit-contact/${contact.id}`)}
                     >
                       Edit
+                    </button>
+                  </td>
+                  <td className="py-2 px-3">
+                    <button
+                      className="border border-red-500 text-red-500 px-3 py-1 rounded hover:bg-red-50 text-sm"
+                      onClick={() => handleDelete(contact.id)}
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
