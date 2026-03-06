@@ -73,6 +73,7 @@ import ContactComments from "./pages/Admin/ContactComments";
 import Amenities from "./components/Amenities";
 import EditContact from "./pages/Admin/EditContact";
 import AdminVisitorsOverview from "./pages/Admin/AdminVisitorsOverview";
+import ResetPassword from "./components/ResetPassword";
 
 
 
@@ -116,6 +117,7 @@ const App = () => {
         <Route path="/amenities" element={<Amenities />} />
         <Route path="/virtual" element={<VirtualOfficeServices />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:id" element={<BlogDetails />} />
 
