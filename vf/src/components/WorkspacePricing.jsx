@@ -310,10 +310,27 @@ const WorkspacePricing = () => {
     if (startDate && endDate) {
       const s = new Date(startDate);
       const e = new Date(endDate);
-      if (e < s) return setDays(0);
-      const diff = e - s;
-      const d = Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
-      setDays(d);
+
+      if (e < s) {
+        setDays(0);
+        return;
+      }
+
+      let workingDaysCount = 0;
+      let current = new Date(s);
+
+      // We loop from start date to end date
+      while (current <= e) {
+        // getDay() returns 0 for Sunday. 
+        // We only increment the count if it's NOT 0.
+        if (current.getDay() !== 0) {
+          workingDaysCount++;
+        }
+        // Move to the next day
+        current.setDate(current.getDate() + 1);
+      }
+
+      setDays(workingDaysCount);
     } else {
       setDays(0);
     }
@@ -398,17 +415,26 @@ const WorkspacePricing = () => {
     const price = modalData?.price || 0;
     const count = modalData?.seatCount || 1;
 
+    // DAILY: Correctly uses the new Sunday-excluded days count
     if (modalData?.planType === "Daily") {
       return price * days * count;
     }
+
+    // MONTHLY: Logic updated for Sunday-excluded days
     if (modalData?.planType === "Monthly") {
-      const months = Math.max(1, Math.round(days / 30));
+      /** * Since 'days' now excludes Sundays (~26 days per month), 
+       * we check if the count is at least 20 to consider it a full month.
+       */
+      const months = Math.max(1, Math.round(days / 26));
       return price * months * count;
     }
+
+    // HOURLY: Correctly uses totalHours * Sunday-excluded days
     if (modalData?.planType === "Hourly") {
       const attendees = count > 1 ? count : numAttendees;
       return price * totalHours * days * attendees;
     }
+
     return 0;
   };
 
@@ -446,7 +472,7 @@ const WorkspacePricing = () => {
       planType.charAt(0).toUpperCase() + planType.slice(1).toLowerCase();
 
     // REQUIREMENT SOLUTION: Reset selection. Do not fetch remembered IDs from cart.
-    const rememberedIds = []; 
+    const rememberedIds = [];
 
     if (group.items.length > 1) {
       setCodeSelectModal({
@@ -1111,7 +1137,7 @@ const WorkspacePricing = () => {
               >
                 <button onClick={() => resetState()} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl">✕</button>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center"><span className="text-red-500 font-bold uppercase">REVIEW DETAILS</span></h3>
-                <p className="text-gray-600 text-center mb-6">Selected Dates: {formatToISTDate(startDate)} – {formatToISTDate(endDate)} ({days} day) {modalData.planType === "Hourly" && ` (${totalHours} hour/day)`} {modalData.title === "Video Conferencing" && ` for ${numAttendees} person(s)`}</p>
+                <p className="text-gray-600 text-center mb-6">Selected Dates: {formatToISTDate(startDate)} – {formatToISTDate(endDate)} ({days} days) {modalData.planType === "Hourly" && ` (${totalHours} hour/day)`} {modalData.title === "Video Conferencing" && ` for ${numAttendees} person(s)`}</p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-6">
                   <div><label className="block text-gray-700 mb-1">Plan</label><input value={modalData.title} readOnly className="w-full border rounded-lg px-3 py-2" /></div>
                   <div><label className="block text-gray-700 mb-1">Pack</label><input value={modalData.planType} readOnly className="w-full border rounded-lg px-3 py-2" /></div>
