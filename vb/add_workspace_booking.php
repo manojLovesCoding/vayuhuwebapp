@@ -22,7 +22,7 @@ try {
     // ------------------------------------
     // JWT VERIFICATION FROM COOKIE
     // ------------------------------------
-    $token = $_COOKIE['auth_token'] ?? null; 
+    $token = $_COOKIE['auth_token'] ?? null;
 
     if (!$token) {
         http_response_code(401);
@@ -31,7 +31,6 @@ try {
 
     try {
         $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
-
     } catch (Exception $e) {
         http_response_code(401);
         throw new Exception("Invalid or expired token. Please log in again.");
@@ -46,7 +45,6 @@ try {
     // --- Extract and validate input ---
     $user_id         = (int)($data['user_id'] ?? 0);
     $space_id        = (int)($data['space_id'] ?? 0);
-
 
     $seat_codes_raw  = $data['selected_codes'] ?? $data['seat_codes'] ?? '';
     $seat_codes      = is_array($seat_codes_raw) ? implode(", ", $seat_codes_raw) : trim($seat_codes_raw);
@@ -70,7 +68,6 @@ try {
     $terms_accepted  = (int)($data['terms_accepted'] ?? 0);
     $payment_id      = trim($data['payment_id'] ?? '');
 
-
     if ($user_id <= 0 || $space_id <= 0 || !$workspace_title || !$plan_type || !$start_date || !$end_date) {
         throw new Exception("Missing required fields.");
     }
@@ -78,6 +75,27 @@ try {
         throw new Exception("Invalid plan_type.");
     }
     if ($terms_accepted !== 1) throw new Exception("Terms must be accepted.");
+
+    // --- NEW: VALIDATE ATTENDEE COUNT FOR VIDEO CONFERENCING ---
+    if ($workspace_title === "Video Conferencing" && $num_attendees < 1) {
+        throw new Exception("At least one attendee (Host or Team Member) must be selected.");
+    }
+
+    // --- NEW: BACKEND PRICE VERIFICATION ---
+    // Recalculate to ensure frontend hasn't been tampered with
+    $calculated_base = 0;
+    if ($plan_type === 'hourly') {
+        $calculated_base = $price_per_unit * $total_hours * $total_days * $num_attendees;
+    } elseif ($plan_type === 'daily') {
+        $calculated_base = $price_per_unit * $total_days * ($data['seatCount'] ?? 1);
+    } elseif ($plan_type === 'monthly') {
+        $months = max(1, round($total_days / 26));
+        $calculated_base = $price_per_unit * $months * ($data['seatCount'] ?? 1);
+    }
+
+    if (abs($calculated_base - $base_amount) > 1) { // 1 rupee margin for rounding
+        throw new Exception("Pricing verification failed. Please try again.");
+    }
 
     // --- Validate dates and times ---
     if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $start_date) || !preg_match("/^\d{4}-\d{2}-\d{2}$/", $end_date)) {
@@ -92,31 +110,26 @@ try {
     // --- HOURLY VALIDATION (1-HOUR INCREMENTS) ---
     if ($plan_type === 'hourly') {
         if (!$start_time || !$end_time) throw new Exception("Start and End times are required for hourly plans.");
-        
+
         $t1 = new DateTime($start_time);
         $t2 = new DateTime($end_time);
 
-        // 1. Check if minutes match (e.g., 03:15 and 04:15)
         if ($t1->format('i') !== $t2->format('i')) {
             throw new Exception("Hourly bookings must be in full-hour intervals (minutes must match).");
         }
 
-        // 2. Ensure end is after start
         if ($t2 <= $t1) {
             throw new Exception("End time must be later than start time.");
         }
 
-        // 3. Ensure at least 1 hour
         $diff = $t1->diff($t2);
         if ($diff->h < 1 && $diff->d == 0) {
             throw new Exception("Minimum booking duration is 1 hour.");
         }
-        
-        // Update total_hours to be exact based on calculation
+
         $total_hours = $diff->h + ($diff->d * 24);
     }
 
-    // Standardize time format for MySQL
     if ($start_time && strlen($start_time) === 5) $start_time .= ':00';
     if ($end_time && strlen($end_time) === 5) $end_time .= ':00';
 
@@ -125,35 +138,27 @@ try {
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     if ($stmt->get_result()->num_rows === 0) throw new Exception("User not found.");
-
     $stmt->close();
 
     $stmt = $conn->prepare("SELECT 1 FROM spaces WHERE id = ? LIMIT 1");
     $stmt->bind_param("i", $space_id);
     $stmt->execute();
     if ($stmt->get_result()->num_rows === 0) throw new Exception("Workspace not found.");
-
     $stmt->close();
 
     // --- Conflict Check ---
     $stmt = $conn->prepare("
         SELECT 1 FROM workspace_bookings 
         WHERE space_id = ? AND status != 'cancelled'
-
           AND (
                (plan_type = 'hourly' AND start_date = ? AND NOT (? <= start_time OR ? >= end_time))
             OR (plan_type = 'daily' AND start_date = ?)
             OR (plan_type = 'monthly' AND NOT (? < start_date OR ? > end_date))
           ) LIMIT 1
-
     ");
     $stmt->bind_param("issssss", $space_id, $start_date, $end_time, $start_time, $start_date, $start_date, $end_date);
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) throw new Exception("Workspace is already booked for this slot.");
-
-
-
-
     $stmt->close();
 
     // --- ID Generation ---
@@ -174,44 +179,39 @@ try {
             price_per_unit, base_amount, gst_amount, discount_amount, final_amount,
             coupon_code, referral_source, terms_accepted, status, payment_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-
     ");
 
-    $stmt->bind_param("siisssssssiidddddssisss", 
-        $booking_id, $user_id, $space_id, $seat_codes, $workspace_title, $plan_type,
-        $start_date, $end_date, $start_time, $end_time,
-        $total_days, $total_hours, $num_attendees,
-        $price_per_unit, $base_amount, $gst_amount, $discount_amount, $final_amount,
-        $coupon_code, $referral_source, $terms_accepted, $status, $payment_id
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    $stmt->bind_param(
+        "siisssssssiidddddssisss",
+        $booking_id,
+        $user_id,
+        $space_id,
+        $seat_codes,
+        $workspace_title,
+        $plan_type,
+        $start_date,
+        $end_date,
+        $start_time,
+        $end_time,
+        $total_days,
+        $total_hours,
+        $num_attendees,
+        $price_per_unit,
+        $base_amount,
+        $gst_amount,
+        $discount_amount,
+        $final_amount,
+        $coupon_code,
+        $referral_source,
+        $terms_accepted,
+        $status,
+        $payment_id
     );
 
     if (!$stmt->execute()) throw new Exception("Save failed: " . $stmt->error);
-
     $stmt->close();
 
     if (!empty($payment_id)) {
-
-
         $update = $conn->prepare("UPDATE workspace_bookings SET status = 'confirmed' WHERE booking_id = ?");
         $update->bind_param("s", $booking_id);
         $update->execute();
@@ -219,15 +219,7 @@ try {
     }
 
     echo json_encode(["success" => true, "booking_id" => $booking_id, "status" => !empty($payment_id) ? 'confirmed' : 'pending']);
-
-
-
-
-
-
-
 } catch (Exception $e) {
     http_response_code(400);
-
     echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }

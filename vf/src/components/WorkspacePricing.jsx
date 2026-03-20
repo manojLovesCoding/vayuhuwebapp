@@ -1055,35 +1055,76 @@ const WorkspacePricing = () => {
                     </div>
                   </div>
                 )}
+                {/* --- UPDATED VIDEO CONFERENCING ATTENDEE SECTION --- */}
                 {modalData.planType === "Hourly" && modalData.title === "Video Conferencing" && (
                   <div className="mb-4 space-y-4">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Host (You):</label>
-                      <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">{bookingUser?.name?.charAt(0).toUpperCase() || "H"}</div>
-                        <span className="text-sm font-semibold text-gray-800">{bookingUser?.name || "Loading..."} (Host)</span>
+                      <label className="block text-gray-700 font-medium mb-2">Select Attendees:</label>
+                      <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2 bg-gray-50 custom-scrollbar">
+
+                        {/* Host Selection (Now a Checkbox) */}
+                        <label className="flex items-center gap-3 p-2 bg-orange-50 rounded border border-orange-200 cursor-pointer hover:bg-orange-100 transition">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-orange-500"
+                            checked={numAttendees > selectedEmployeeIds.length} // If total > employees, host is included
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              if (isChecked && numAttendees >= modalData.capacity) {
+                                return toast.warn(`Maximum capacity of ${modalData.capacity} reached.`);
+                              }
+                              // Adjust count based on host selection
+                              setNumAttendees(selectedEmployeeIds.length + (isChecked ? 1 : 0));
+                            }}
+                          />
+                          <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">
+                            {bookingUser?.name?.charAt(0).toUpperCase() || "H"}
+                          </div>
+                          <span className="text-sm font-semibold text-gray-800">
+                            {bookingUser?.name || "Loading..."} (Host)
+                          </span>
+                        </label>
+
+                        {/* Employee Selection */}
+                        {userEmployees.length > 0 ? (
+                          userEmployees.map((emp) => {
+                            const isSelected = selectedEmployeeIds.includes(emp.id);
+                            return (
+                              <label key={emp.id} className="flex items-center gap-3 p-2 bg-white rounded border border-gray-100 cursor-pointer hover:bg-orange-50 transition">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 accent-orange-500"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    const isChecked = e.target.checked;
+                                    if (isChecked && numAttendees >= modalData.capacity) {
+                                      return toast.warn(`Maximum capacity of ${modalData.capacity} reached.`);
+                                    }
+
+                                    const newIds = isChecked
+                                      ? [...selectedEmployeeIds, emp.id]
+                                      : selectedEmployeeIds.filter((id) => id !== emp.id);
+
+                                    setSelectedEmployeeIds(newIds);
+
+                                    // Total = New Employee Count + (Is Host Checked?)
+                                    const hostIncluded = numAttendees > selectedEmployeeIds.length ? 1 : 0;
+                                    setNumAttendees(newIds.length + hostIncluded);
+                                  }}
+                                />
+                                <span className="text-sm text-gray-700">{emp.employee_name}</span>
+                              </label>
+                            );
+                          })
+                        ) : (
+                          <p className="text-xs text-gray-500 italic text-center py-2">No team members found in your profile.</p>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-gray-700 font-medium mb-2">Select Additional Attendees:</label>
-                      <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2 bg-gray-50 custom-scrollbar">
-                        {userEmployees.length > 0 ? (userEmployees.map((emp) => (
-                          <label key={emp.id} className="flex items-center gap-3 p-2 bg-white rounded border border-gray-100 cursor-pointer hover:bg-orange-50 transition">
-                            <input type="checkbox" className="w-4 h-4 accent-orange-500" checked={selectedEmployeeIds.includes(emp.id)}
-                              onChange={(e) => {
-                                const isChecked = e.target.checked;
-                                if (isChecked && (selectedEmployeeIds.length + 1) >= modalData.capacity) { return toast.warn(`Maximum capacity of ${modalData.capacity} reached.`); }
-                                const ids = isChecked ? [...selectedEmployeeIds, emp.id] : selectedEmployeeIds.filter((id) => id !== emp.id);
-                                setSelectedEmployeeIds(ids); setNumAttendees(ids.length + 1);
-                              }}
-                            />
-                            <span className="text-sm text-gray-700">{emp.employee_name}</span>
-                          </label>
-                        ))) : (<p className="text-xs text-gray-500 italic text-center py-2">No team members found in your profile.</p>)}
-                      </div>
-                    </div>
+
+                    {/* Summary Bar */}
                     <div className="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-                      <p className="text-[11px] font-bold text-gray-600">Total People: {selectedEmployeeIds.length + 1}</p>
+                      <p className="text-[11px] font-bold text-gray-600">Total People: {numAttendees}</p>
                       <p className="text-[10px] text-gray-500">Max Capacity: {modalData.capacity}</p>
                     </div>
                   </div>
@@ -1158,37 +1199,143 @@ const WorkspacePricing = () => {
                 </div>
                 <div className="flex justify-between mt-6 gap-2 flex-wrap">
                   <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">« Back</button>
-                  <button onClick={() => {
-                    const bookingItem = { cartId: crypto.randomUUID() || Date.now(), id: modalData.id, all_space_ids: modalData.allIds || [modalData.id], title: modalData.title, plan_type: modalData.planType, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime, total_days: days, total_hours: totalHours, num_attendees: numAttendees, final_amount: parseFloat(finalTotal), seat_codes: modalData.selectedCodes };
-                    addToCart(bookingItem); toast.success("✅ Added to cart!"); resetState();
-                  }} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Add to Cart</button>
-                  <button onClick={async () => {
-                    try {
-                      const availabilityResponse = await axios.post(`${API_BASE_URL}/check_workspace_availability.php`, { space_id: modalData.id, plan_type: modalData.planType.toLowerCase(), start_date: startDate, end_date: endDate || startDate, start_time: startTime, end_time: endTime, all_space_ids: modalData.allIds || [modalData.id] }, { withCredentials: true });
-                      if (!availabilityResponse.data.success) { toast.error(availabilityResponse.data.message); return; }
-                      const script = document.createElement("script"); script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                      script.onload = async () => {
-                        const bookingData = { user_id: getUserId(), space_id: modalData.id, all_space_ids: modalData.allIds || [modalData.id], workspace_title: modalData.title, plan_type: modalData.planType, start_date: startDate, end_date: endDate, start_time: startTime || null, end_time: endTime || null, total_days: days, total_hours: totalHours, num_attendees: numAttendees, price_per_unit: modalData.price, base_amount: displayAmount, gst_amount: parseFloat(displayGst), discount_amount: discount, final_amount: parseFloat(finalTotal), coupon_code: coupon || null, referral_source: referral || null, terms_accepted: 1, seat_codes: modalData.selectedCodes };
-                        const orderRes = await axios.post(`${API_BASE_URL}/create_razorpay_order.php`, { amount: bookingData.final_amount }, { withCredentials: true });
-                        if (!orderRes.data.success) throw new Error(orderRes.data.message);
-                        const options = {
-                          key: orderRes.data.key, amount: Math.round(bookingData.final_amount * 100), currency: "INR", name: "Vayuhu Workspaces", description: `${modalData.title} Booking`, order_id: orderRes.data.order_id,
-                          handler: async (response) => {
-                            const verifyRes = await axios.post(`${API_BASE_URL}/verify_payment.php`, response, { withCredentials: true });
-                            if (verifyRes.data.success) {
-                              const finalBooking = await axios.post(`${API_BASE_URL}/add_workspace_booking.php`, { ...bookingData, payment_id: response.razorpay_payment_id }, { withCredentials: true });
-                              if (finalBooking.data.success) {
-                                toast.success("🎉 Booking confirmed!"); const userData = JSON.parse(localStorage.getItem("user")); const bookingId = finalBooking.data.booking_id || finalBooking.data.id || 0;
-                                await axios.post(`${API_BASE_URL}/send_booking_email.php`, { booking_id: bookingId, user_name: userData?.name || "Customer", user_id: getUserId(), user_email: userData?.email || "", workspace_title: modalData.title, plan_type: modalData.planType, start_date: startDate, end_date: endDate, start_time: startTime, end_time: endTime, total_amount: Number(finalTotal).toFixed(2), seat_codes: modalData.selectedCodes }, { withCredentials: true });
-                                resetState(); navigate("/dashboard");
-                              } else { toast.error(finalBooking.data.message || "Booking failed"); }
-                            } else { toast.error("Payment verification failed!"); }
-                          }, theme: { color: "#F97316" }
+                  <button
+                    onClick={() => {
+                      const bookingItem = {
+                        cartId: crypto.randomUUID() || Date.now(),
+                        id: modalData.id,
+                        all_space_ids: modalData.allIds || [modalData.id],
+                        title: modalData.title,
+                        plan_type: modalData.planType,
+                        start_date: startDate,
+                        end_date: endDate,
+                        start_time: startTime,
+                        end_time: endTime,
+                        total_days: days,
+                        total_hours: totalHours,
+                        num_attendees: numAttendees, // Simple and uses your existing state
+                        final_amount: parseFloat(finalTotal),
+                        seat_codes: modalData.selectedCodes
+                      };
+                      addToCart(bookingItem);
+                      toast.success("✅ Added to cart!");
+                      resetState();
+                    }}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                  >
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const availabilityResponse = await axios.post(`${API_BASE_URL}/check_workspace_availability.php`, {
+                          space_id: modalData.id,
+                          plan_type: modalData.planType.toLowerCase(),
+                          start_date: startDate,
+                          end_date: endDate || startDate,
+                          start_time: startTime,
+                          end_time: endTime,
+                          all_space_ids: modalData.allIds || [modalData.id]
+                        }, { withCredentials: true });
+
+                        if (!availabilityResponse.data.success) {
+                          toast.error(availabilityResponse.data.message);
+                          return;
+                        }
+
+                        const script = document.createElement("script");
+                        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+                        script.onload = async () => {
+                          const bookingData = {
+                            user_id: getUserId(),
+                            space_id: modalData.id,
+                            all_space_ids: modalData.allIds || [modalData.id],
+                            workspace_title: modalData.title,
+                            plan_type: modalData.planType,
+                            start_date: startDate,
+                            end_date: endDate,
+                            start_time: startTime || null,
+                            end_time: endTime || null,
+                            total_days: days,
+                            total_hours: totalHours,
+                            num_attendees: numAttendees, // This saves to DB correctly
+                            price_per_unit: modalData.price,
+                            base_amount: displayAmount,
+                            gst_amount: parseFloat(displayGst),
+                            discount_amount: discount,
+                            final_amount: parseFloat(finalTotal),
+                            coupon_code: coupon || null,
+                            referral_source: referral || null,
+                            terms_accepted: 1,
+                            seat_codes: modalData.selectedCodes
+                          };
+
+                          const orderRes = await axios.post(`${API_BASE_URL}/create_razorpay_order.php`, {
+                            amount: bookingData.final_amount
+                          }, { withCredentials: true });
+
+                          if (!orderRes.data.success) throw new Error(orderRes.data.message);
+
+                          const options = {
+                            key: orderRes.data.key,
+                            amount: Math.round(bookingData.final_amount * 100),
+                            currency: "INR",
+                            name: "Vayuhu Workspaces",
+                            description: `${modalData.title} Booking`,
+                            order_id: orderRes.data.order_id,
+                            handler: async (response) => {
+                              const verifyRes = await axios.post(`${API_BASE_URL}/verify_payment.php`, response, { withCredentials: true });
+
+                              if (verifyRes.data.success) {
+                                const finalBooking = await axios.post(`${API_BASE_URL}/add_workspace_booking.php`, {
+                                  ...bookingData,
+                                  payment_id: response.razorpay_payment_id
+                                }, { withCredentials: true });
+
+                                if (finalBooking.data.success) {
+                                  toast.success("🎉 Booking confirmed!");
+                                  const userData = JSON.parse(localStorage.getItem("user"));
+                                  const bookingId = finalBooking.data.booking_id || finalBooking.data.id || 0;
+
+                                  // --- FIXED EMAIL CALL BELOW ---
+                                  await axios.post(`${API_BASE_URL}/send_booking_email.php`, {
+                                    booking_id: bookingId,
+                                    user_name: userData?.name || "Customer",
+                                    user_id: getUserId(),
+                                    user_email: userData?.email || "",
+                                    workspace_title: modalData.title,
+                                    plan_type: modalData.planType,
+                                    start_date: startDate,
+                                    end_date: endDate,
+                                    start_time: startTime,
+                                    end_time: endTime,
+                                    num_attendees: numAttendees, // Added this line so email script sees it
+                                    total_amount: Number(finalTotal).toFixed(2),
+                                    seat_codes: modalData.selectedCodes
+                                  }, { withCredentials: true });
+
+                                  resetState();
+                                  navigate("/dashboard");
+                                } else {
+                                  toast.error(finalBooking.data.message || "Booking failed");
+                                }
+                              } else {
+                                toast.error("Payment verification failed!");
+                              }
+                            },
+                            theme: { color: "#F97316" }
+                          };
+                          new window.Razorpay(options).open();
                         };
-                        new window.Razorpay(options).open();
-                      }; document.body.appendChild(script);
-                    } catch (err) { toast.error("Process failed: " + (err.response?.data?.message || err.message)); }
-                  }} className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Pay & Book »</button>
+                        document.body.appendChild(script);
+                      } catch (err) {
+                        toast.error("Process failed: " + (err.response?.data?.message || err.message));
+                      }
+                    }}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                  >
+                    Pay & Book »
+                  </button>
                 </div>
               </motion.div>
             )}

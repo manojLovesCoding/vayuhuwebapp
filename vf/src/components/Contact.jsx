@@ -139,6 +139,18 @@ const Contact = () => {
               required
             />
           </div>
+
+          {/* Location (Read-only) */}
+          <div className="text-left mb-6">
+            <label className="block font-medium mb-2">Location</label>
+            <input
+              className="w-full border border-gray-300 rounded-xl py-3 px-4 bg-gray-100 text-gray-600 cursor-not-allowed"
+              type="text"
+              name="Location"
+              value="Sanjayanagara"
+              readOnly
+            />
+          </div>
         </div>
 
         {/* Message */}

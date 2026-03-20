@@ -256,10 +256,22 @@ const CartDrawer = ({ open, onClose }) => {
               {
                 user_id: user?.id,
                 user_email: user?.email,
+                user_name: user?.name || "Customer", // Added name
                 total_amount: Number(totalAmount).toFixed(2),
-                subtotal: subtotal,
-                gst_amount: gst,
-                bookings: cart,
+                // Map the cart to ensure keys match exactly what PHP expects
+                bookings: cart.map(item => ({
+                  workspace_title: item.title,
+                  plan_type: item.plan_type,
+                  start_date: item.start_date,
+                  end_date: item.end_date,
+                  start_time: item.start_time,
+                  end_time: item.end_time,
+                  num_attendees: item.num_attendees, // Now correctly passed from cart state
+                  seat_codes: item.seat_codes || "",
+                  final_amount: Number(item.final_amount).toFixed(2),
+                  // If your bulk booking response returns IDs, you can map them here
+                  booking_id: item.booking_id || ""
+                })),
               },
               { withCredentials: true }
             );

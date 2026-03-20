@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import FloatingCartButton from "./FloatingCartButton";
 import CartDrawer from "./CartDrawer";
 import { useCart } from "../context/CartContext";
+import { Menu } from "lucide-react";
 
 const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -217,10 +218,8 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <img
-              src={assets.menu_icon}
-              alt="menu"
-              className="w-6 cursor-pointer"
+            <Menu
+              className="w-6 h-6 text-orange-600 cursor-pointer"
               onClick={() => setShowMobileMenu(true)}
             />
           </div>
