@@ -64,8 +64,20 @@ const CompanyProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!userId) {
       toast.error("User not logged in!");
+      return;
+    }
+
+    // ✅ Added validations
+    if (!formData.gstNo) {
+      toast.error("GST No is required!");
+      return;
+    }
+
+    if (!formData.address) {
+      toast.error("Address is required!");
       return;
     }
 
@@ -84,10 +96,12 @@ const CompanyProfile = () => {
         ? `${API_BASE}/update_company_profile.php`
         : `${API_BASE}/add_company_profile.php`;
 
-      // ✅ Send request with HttpOnly cookie (no Authorization header)
-      const response = await axios.post(url, payload, { withCredentials: true });
+      const response = await axios.post(url, payload, {
+        withCredentials: true,
+      });
 
       const result = response.data;
+
       if (result.success) {
         toast.success(result.message);
         if (!profileId && result.profileId) setProfileId(result.profileId);
@@ -96,7 +110,8 @@ const CompanyProfile = () => {
       }
     } catch (error) {
       console.error(error);
-      const errorMsg = error.response?.data?.message || "Something went wrong!";
+      const errorMsg =
+        error.response?.data?.message || "Something went wrong!";
       toast.error(errorMsg);
     }
   };
@@ -157,13 +172,14 @@ const CompanyProfile = () => {
           {/* GST No */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              GST No
+              GST No <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               name="gstNo"
               value={formData.gstNo}
               onChange={handleChange}
+              required
               className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
@@ -171,7 +187,7 @@ const CompanyProfile = () => {
           {/* Company Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company Email *
+              Company Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -179,10 +195,8 @@ const CompanyProfile = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              readOnly={!!profileId}
-              className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500 ${
-                profileId ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-              }`}
+              placeholder="Enter Company Email"
+              className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
@@ -204,13 +218,14 @@ const CompanyProfile = () => {
           {/* Address */}
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address
+              Address <span className="text-red-500">*</span>
             </label>
             <textarea
               name="address"
               rows="3"
               value={formData.address}
               onChange={handleChange}
+              required
               className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
             />
           </div>

@@ -2,8 +2,8 @@
 // ------------------------------------
 // Load Environment & Centralized CORS
 // ------------------------------------
-require_once __DIR__ . '/config/env.php';   // Loads $_ENV['JWT_SECRET']
-require_once __DIR__ . '/config/cors.php';  // Sets CORS headers & handles OPTIONS preflight
+require_once __DIR__ . '/config/env.php';
+require_once __DIR__ . '/config/cors.php';
 
 // ------------------------------------
 // Database connection
@@ -15,19 +15,17 @@ if (!$conn) {
 }
 
 // ------------------------------------
-// ✅ Include JWT Library
+// JWT
 // ------------------------------------
 require_once __DIR__ . '/vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-// ------------------------------------
-// ✅ JWT SECRET FROM ENV
-// ------------------------------------
 $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 // ------------------------------------
-// ✅ JWT Verification from HttpOnly Cookie
+// JWT Verification
 // ------------------------------------
 if (!isset($_COOKIE['auth_token'])) {
     http_response_code(401);
@@ -39,7 +37,7 @@ $token = $_COOKIE['auth_token'];
 
 try {
     $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
-    $decoded_user_id = $decoded->data->id; // Extract user ID from token
+    $decoded_user_id = $decoded->data->id;
 } catch (Exception $e) {
     http_response_code(401);
     echo json_encode(["success" => false, "message" => "Invalid or expired token"]);
@@ -56,23 +54,49 @@ if (!isset($_POST['id'])) {
 
 $id = intval($_POST['id']);
 
-// ✅ SECURITY CHECK - Ensure token owner matches ID
+// ✅ SECURITY CHECK
 if ((int)$decoded_user_id !== $id) {
     http_response_code(403);
-    echo json_encode(["success" => false, "message" => "Unauthorized: You cannot update this profile"]);
+    echo json_encode(["success" => false, "message" => "Unauthorized"]);
     exit;
 }
 
+// ------------------------------------
+// Get fields
+// ------------------------------------
 $name    = $_POST['name'] ?? '';
 $phone   = $_POST['phone'] ?? '';
+$email   = $_POST['email'] ?? '';
 $dob     = $_POST['dob'] ?? '';
 $address = $_POST['address'] ?? '';
 
-// Validate required fields
-if (empty($id) || empty($name) || empty($phone)) {
-    echo json_encode(["success" => false, "message" => "Missing required fields"]);
+// ------------------------------------
+// VALIDATION
+// ------------------------------------
+if (empty($id) || empty($name) || empty($phone) || empty($email) || empty($address)) {
+    echo json_encode(["success" => false, "message" => "All required fields must be filled"]);
     exit;
 }
+
+// Email format
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(["success" => false, "message" => "Invalid email format"]);
+    exit;
+}
+
+// ------------------------------------
+// ✅ CHECK DUPLICATE EMAIL
+// ------------------------------------
+$checkEmail = $conn->prepare("SELECT id FROM users WHERE email=? AND id!=?");
+$checkEmail->bind_param("si", $email, $id);
+$checkEmail->execute();
+$result = $checkEmail->get_result();
+
+if ($result->num_rows > 0) {
+    echo json_encode(["success" => false, "message" => "Email already in use"]);
+    exit;
+}
+$checkEmail->close();
 
 // ------------------------------------
 // Handle profile picture upload
@@ -92,29 +116,63 @@ if (isset($_FILES['profilePic']) && $_FILES['profilePic']['error'] === UPLOAD_ER
 }
 
 // ------------------------------------
-// Build and execute update query
+// UPDATE QUERY
 // ------------------------------------
 if ($profile_pic_path) {
     $sql = "UPDATE users 
-            SET name=?, phone=?, dob=?, address=?, profile_pic=? 
+            SET name=?, phone=?, email=?, dob=?, address=?, profile_pic=? 
             WHERE id=?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssi", $name, $phone, $dob, $address, $profile_pic_path, $id);
+    $stmt->bind_param("ssssssi", $name, $phone, $email, $dob, $address, $profile_pic_path, $id);
 } else {
     $sql = "UPDATE users 
-            SET name=?, phone=?, dob=?, address=? 
+            SET name=?, phone=?, email=?, dob=?, address=? 
             WHERE id=?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssssi", $name, $phone, $dob, $address, $id);
+    $stmt->bind_param("sssssi", $name, $phone, $email, $dob, $address, $id);
 }
 
-// Execute update
+// ------------------------------------
+// EXECUTE + REFRESH JWT
+// ------------------------------------
 if ($stmt->execute()) {
-    echo json_encode(["success" => true, "message" => "Profile updated successfully"]);
+
+    // ✅ Generate NEW JWT
+    $issuedAt = time();
+    $expire = $issuedAt + (60 * 60 * 24 * 7); // 7 days
+
+    $payload = [
+        "iat" => $issuedAt,
+        "exp" => $expire,
+        "data" => [
+            "id" => $id,
+            "email" => $email
+        ]
+    ];
+
+    $new_jwt = JWT::encode($payload, $secret_key, 'HS256');
+
+    // ✅ Set new cookie
+    setcookie(
+        "auth_token",
+        $new_jwt,
+        [
+            'expires' => $expire,
+            'path' => '/',
+            'secure' => false,     // ⚠️ set false in localhost
+            'httponly' => true,
+            'samesite' => 'None'
+        ]
+    );
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Profile updated successfully",
+        "token_refreshed" => true
+    ]);
 } else {
     echo json_encode(["success" => false, "message" => "Failed to update profile"]);
 }
 
 $stmt->close();
 $conn->close();
-?>

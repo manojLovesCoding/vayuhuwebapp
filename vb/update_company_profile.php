@@ -1,29 +1,27 @@
 <?php
 // ------------------------------------
-// Load Environment & Centralized CORS
+// Load Environment & CORS
 // ------------------------------------
-require_once __DIR__ . '/config/env.php';   // Loads $_ENV['JWT_SECRET']
-require_once __DIR__ . '/config/cors.php';  // Sets CORS headers & handles OPTIONS preflight
+require_once __DIR__ . '/config/env.php';
+require_once __DIR__ . '/config/cors.php';
 
 // ------------------------------------
-// DATABASE CONNECTION
+// DB CONNECTION
 // ------------------------------------
 require_once 'db.php';
 
 // ------------------------------------
-// ✅ INCLUDE JWT LIBRARY
+// JWT
 // ------------------------------------
 require_once __DIR__ . '/vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-// ------------------------------------
-// ✅ JWT SECRET FROM ENV
-// ------------------------------------
 $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 // ------------------------------------
-// ✅ GET & VERIFY JWT FROM COOKIE
+// VERIFY JWT
 // ------------------------------------
 $token = $_COOKIE['auth_token'] ?? null;
 
@@ -46,26 +44,55 @@ try {
 // VALIDATE INPUT
 // ------------------------------------
 $user_id = $_POST['user_id'] ?? null;
+
 if (!$user_id) {
     echo json_encode(["success" => false, "message" => "User ID required"]);
     exit;
 }
 
-// ✅ SECURITY CHECK: Token user ID vs Request user ID
+// SECURITY CHECK
 if ((int)$decoded_user_id !== (int)$user_id) {
     http_response_code(403);
     echo json_encode(["success" => false, "message" => "Unauthorized: User ID mismatch."]);
     exit;
 }
 
-// Collect updated fields
+// ------------------------------------
+// GET FIELDS
+// ------------------------------------
 $companyName = trim($_POST['companyName'] ?? "");
 $gstNo       = trim($_POST['gstNo'] ?? "");
 $contact     = trim($_POST['contact'] ?? "");
 $address     = trim($_POST['address'] ?? "");
-
-// Optional: email should not be updated
 $email       = trim($_POST['email'] ?? "");
+
+// ------------------------------------
+// ✅ VALIDATION
+// ------------------------------------
+if (empty($companyName) || empty($gstNo) || empty($contact) || empty($email) || empty($address)) {
+    echo json_encode(["success" => false, "message" => "All required fields must be filled"]);
+    exit;
+}
+
+// Email format
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(["success" => false, "message" => "Invalid email format"]);
+    exit;
+}
+
+// ------------------------------------
+// ✅ CHECK DUPLICATE EMAIL
+// ------------------------------------
+$checkEmail = $conn->prepare("SELECT id FROM company_profile WHERE email=? AND user_id!=?");
+$checkEmail->bind_param("si", $email, $user_id);
+$checkEmail->execute();
+$result = $checkEmail->get_result();
+
+if ($result->num_rows > 0) {
+    echo json_encode(["success" => false, "message" => "Email already in use"]);
+    exit;
+}
+$checkEmail->close();
 
 // ------------------------------------
 // HANDLE LOGO UPLOAD
@@ -80,17 +107,19 @@ if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
     $targetPath = $uploadDir . $fileName;
 
     $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+
     if (in_array($_FILES['logo']['type'], $allowedTypes) && move_uploaded_file($fileTmp, $targetPath)) {
         $logoPath = "uploads/company_logos/" . $fileName;
     }
 }
 
 // ------------------------------------
-// BUILD SQL
+// BUILD SQL (UPDATED WITH EMAIL)
 // ------------------------------------
-$sql = "UPDATE company_profile SET company_name=?, gst_no=?, contact=?, address=?";
-$params = [$companyName, $gstNo, $contact, $address];
-$types = "ssss";
+$sql = "UPDATE company_profile 
+        SET company_name=?, gst_no=?, email=?, contact=?, address=?";
+$params = [$companyName, $gstNo, $email, $contact, $address];
+$types = "sssss";
 
 if ($logoPath) {
     $sql .= ", logo=?";
@@ -103,12 +132,18 @@ $params[] = $user_id;
 $types .= "i";
 
 // ------------------------------------
-// EXECUTE UPDATE
+// EXECUTE
 // ------------------------------------
 $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
 
 if ($stmt->execute()) {
+
+    // ------------------------------------
+    // ✅ OPTIONAL: Refresh JWT (if needed)
+    // ------------------------------------
+    // Only needed if your JWT stores company email (usually not required)
+
     echo json_encode([
         "success" => true,
         "message" => "Company profile updated successfully"

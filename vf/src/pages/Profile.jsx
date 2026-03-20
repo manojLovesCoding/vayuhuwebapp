@@ -79,11 +79,23 @@ const Profile = () => {
       return;
     }
 
+    // ✅ Extra validation (safe fallback)
+    if (!formData.email) {
+      toast.error("Email is required!");
+      return;
+    }
+
+    if (!formData.address) {
+      toast.error("Address is required!");
+      return;
+    }
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("id", userId);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("phone", formData.contact);
+      formDataToSend.append("email", formData.email); // ✅ Added email
       formDataToSend.append("dob", formData.dob);
       formDataToSend.append("address", formData.address);
       if (profilePic) formDataToSend.append("profilePic", profilePic);
@@ -101,7 +113,7 @@ const Profile = () => {
 
       if (result.success) {
         toast.success("Profile updated successfully!");
-        setProfilePic(null); 
+        setProfilePic(null);
       } else {
         toast.error("Failed to update profile: " + result.message);
       }
@@ -198,14 +210,16 @@ const Profile = () => {
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Id
+              Email Id <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
-              disabled
-              className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none"
+              onChange={handleChange}
+              required
+              placeholder="Enter Email"
+              className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
@@ -226,7 +240,7 @@ const Profile = () => {
           {/* Address */}
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address
+              Address <span className="text-red-500">*</span>
             </label>
             <textarea
               name="address"
@@ -234,6 +248,7 @@ const Profile = () => {
               value={formData.address}
               onChange={handleChange}
               placeholder="Enter Address"
+              required
               className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
             />
           </div>

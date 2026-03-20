@@ -12087,8 +12087,11 @@ document.body.removeChild(dummy);
 			}
 			return player.getCurrentNode();
 		}
-		me._openwebsite.onclick=function (e) {
+		{/*me._openwebsite.onclick=function (e) {
 			player.openUrl("https:\/\/www.vayuhu.com\/index.php","_blank");
+		}*/}
+		me._openwebsite.onclick = function (e) {
+    		player.openUrl("https://www.vayuhu.com/", "_blank");
 		}
 		me._openwebsite.onmouseover=function (e) {
 			me._openwebsite__img.style.visibility='hidden';

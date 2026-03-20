@@ -172,11 +172,6 @@ const Contact = () => {
           {result ? result : "Send Message"}
         </button>
       </form>
-
-      <div className="mt-10 text-sm text-gray-500">
-        📍 25 Kalpana Chawla Road, Bangalore 560094 <br />
-        📧 support@vayuhu.com | ☎️ +91 73488 57574
-      </div>
     </motion.div>
   );
 };
