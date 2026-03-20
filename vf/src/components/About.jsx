@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { assets } from '../assets/assets';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -18,24 +18,6 @@ const About = () => {
         { num: '20+', label: 'Amenities', desc: 'Globally Accessible, Premium Features', icon: Cog },
         { num: '60+', label: 'Workspaces', desc: 'Essentials and More at Your Fingertips', icon: Briefcase },
     ];
-
-    const carouselImages = [
-        assets.brand_img,
-        assets.aboutImg,
-        // add more images here if needed
-    ];
-    const [currentImage, setCurrentImage] = useState(0);
-
-    // Auto slide every 4s
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentImage(prev => (prev + 1) % carouselImages.length);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const handlePrev = () => setCurrentImage(prev => (prev - 1 + carouselImages.length) % carouselImages.length);
-    const handleNext = () => setCurrentImage(prev => (prev + 1) % carouselImages.length);
 
     return (
         <motion.section
@@ -62,37 +44,20 @@ const About = () => {
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className='text-gray-500 text-center max-w-2xl mb-12'
             >
-                Redefining the modern workspace with flexibility, creativity, and community.
+                Redefining the modern workspace with flexibility, creativity, and community.<br />
                 Vayuhu brings professionals, freelancers, and startups together under one inspiring roof.
             </motion.p>
 
             {/* ===== Three Columns ===== */}
             <div className='flex flex-col md:flex-row items-start gap-8 md:gap-16 w-full'>
-                
-                {/* ===== Left Column: Carousel with Dots ===== */}
+
+                {/* ===== Left Column: Single Image ===== */}
                 <div className='relative w-full md:w-1/3 h-96 rounded-2xl shadow-lg overflow-hidden'>
                     <img
-                        src={carouselImages[currentImage]}
+                        src={assets.aboutImg} // only second image
                         alt='Vayuhu Coworking Space'
                         className='w-full h-full object-cover rounded-2xl'
                     />
-
-                    {/* Carousel Controls */}
-                    <button onClick={handlePrev} className='absolute top-1/2 left-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'>‹</button>
-                    <button onClick={handleNext} className='absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/70 hover:bg-white px-3 py-2 rounded-full'>›</button>
-
-                    {/* Dots Navigation */}
-                    <div className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2'>
-                        {carouselImages.map((_, index) => (
-                            <span
-                                key={index}
-                                onClick={() => setCurrentImage(index)}
-                                className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
-                                    currentImage === index ? 'bg-orange-500' : 'bg-white/70'
-                                }`}
-                            />
-                        ))}
-                    </div>
                 </div>
 
                 {/* ===== Middle Column: About Text + Button ===== */}

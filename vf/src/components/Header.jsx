@@ -22,22 +22,6 @@ const wordVariants = {
     transition: { duration: 0.7, ease: "easeOut" },
   },
 };
-
-/* Glow pulse for "Grow." */
-const glowPulse = {
-  animate: {
-    textShadow: [
-      "0 0 10px rgba(255,165,0,0.4)",
-      "0 0 25px rgba(255,69,0,0.8)",
-      "0 0 10px rgba(255,165,0,0.4)",
-    ],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
-  },
-};
 /* =========================================================== */
 
 const Header = () => {
@@ -92,24 +76,19 @@ const Header = () => {
           animate={isInView ? "visible" : "hidden"}
           className="text-3xl sm:text-5xl md:text-6xl lg:text-[80px] font-bold leading-tight max-w-4xl mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]"
         >
-          {["Work.", "Connect.", "Grow."].map((word, index) => {
-            const isGrow = word === "Grow.";
-
-            return (
-              <motion.span
-                key={index}
-                variants={wordVariants}
-                {...(isGrow && glowPulse)}
-                className={`inline-block mr-4 ${
-                  isGrow
-                    ? "bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                    : "text-[#800000]"
-                }`}
-              >
-                {word}
-              </motion.span>
-            );
-          })}
+          {["Work.", "Connect.", "Grow."].map((word, index) => (
+            <motion.span
+              key={index}
+              variants={wordVariants}
+              className={`inline-block mr-4 ${
+                word === "Grow."
+                  ? "bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                  : "text-[#800000]"
+              }`}
+            >
+              {word}
+            </motion.span>
+          ))}
         </motion.h1>
 
         {/* Subtitle */}
