@@ -1,24 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { MapPin, Phone, Mail, Image, Heart } from "lucide-react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
   const navigate = useNavigate();
-  const [showDeveloper, setShowDeveloper] = useState(false);
 
   const handleGalleryRedirect = () => {
     navigate("/gallery");
     window.scrollTo(0, 600);
   };
 
-  // ✅ UPDATED: Blog redirect with scroll state
   const handleBlogRedirect = () => {
     navigate("/blog", { state: { scrollToBlogs: true } });
-  };
-
-  const toggleDeveloperCredit = () => {
-    setShowDeveloper((prev) => !prev);
   };
 
   return (
@@ -35,7 +29,7 @@ const Footer = () => {
             className="w-32 h-auto md:w-40 object-contain mb-4 mx-auto md:mx-0"
           />
 
-          <p className="text-sm leading-relaxed">
+          <p className="text-sm leading-relaxed text-white">
             At <span className="text-orange-500 font-medium">Vayuhu</span>, we’re
             building more than just workspaces — we’re creating a community where
             innovation thrives.
@@ -64,7 +58,7 @@ const Footer = () => {
           </button>
         </div>
 
-        {/* Contact Info (unchanged) */}
+        {/* Contact Info */}
         <div className="md:w-1/3">
           <h3 className="text-white text-lg font-semibold mb-4">Contact Us</h3>
           <div className="flex flex-col gap-3 text-sm">
@@ -91,31 +85,24 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Bottom section unchanged */}
-      <div className="border-t border-gray-700 mt-12 py-6 text-center text-sm text-gray-500 flex flex-col gap-2 items-center">
-        <span
-          onClick={toggleDeveloperCredit}
-          className="cursor-pointer select-none hover:text-white transition"
-        >
-          © {new Date().getFullYear()} Vayuhu. All Rights Reserved.
-        </span>
+      {/* Bottom Section */}
+      <div className="border-t border-gray-700 mt-12 py-6 text-center text-sm text-white flex flex-col gap-2 items-center">
 
-        <span
-          onClick={toggleDeveloperCredit}
-          className="cursor-pointer select-none text-orange-500 hover:text-orange-400 transition"
-        >
+        © {new Date().getFullYear()} Vayuhu. All Rights Reserved.
+
+        <span className="cursor-default select-none text-orange-500 hover:text-orange-400 transition">
           Built with passion for modern professionals.
         </span>
 
-        {showDeveloper && (
-          <span className="flex flex-wrap justify-center items-center gap-1 text-gray-400 mt-1">
-            Designed & coded with <Heart size={16} className="text-orange-500" /> by{" "}
-            <span className="text-orange-500 font-medium">
-              Manoj Kumar P Vishwakarma
-            </span>{" "}
-            at <span className="text-orange-500 font-medium">Vayuhu</span>
-          </span>
-        )}
+        {/* Developer Credit (Always Visible) */}
+        <span className="flex flex-wrap justify-center items-center gap-1 text-gray-400 mt-1">
+          Designed & coded with{" "}
+          <Heart size={16} className="text-orange-500" /> by{" "}
+          <span className="text-orange-500 font-medium">
+            Manoj Kumar P Vishwakarma
+          </span>{" "}
+          at <span className="text-orange-500 font-medium">Vayuhu</span>
+        </span>
       </div>
     </footer>
   );
