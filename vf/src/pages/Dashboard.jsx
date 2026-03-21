@@ -61,9 +61,16 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [userId]);
 
-  const today = new Date().toISOString().split("T")[0];
+  // ✅ IST "Today" in same format as backend (M d, Y)
+  const todayFormatted = new Date().toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
   const todaysReservations = bookings.filter(
-    (b) => b.start_date === today
+    (b) => b.start_date === todayFormatted
   );
 
   /* ========= MOBILE CARD ========= */
@@ -85,10 +92,10 @@ const Dashboard = () => {
               </h3>
               <span
                 className={`text-xs px-2 py-1 rounded ${b.status === "confirmed"
-                  ? "bg-green-100 text-green-700"
-                  : b.status === "cancelled"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-yellow-100 text-yellow-700"
+                    ? "bg-green-100 text-green-700"
+                    : b.status === "cancelled"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-yellow-100 text-yellow-700"
                   }`}
               >
                 {b.status}
@@ -174,10 +181,10 @@ const Dashboard = () => {
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 rounded text-xs ${b.status === "confirmed"
-                        ? "bg-green-100 text-green-700"
-                        : b.status === "cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
+                          ? "bg-green-100 text-green-700"
+                          : b.status === "cancelled"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
                         }`}
                     >
                       {b.status}
@@ -214,29 +221,17 @@ const Dashboard = () => {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="
-        bg-white
-        rounded-2xl
-        shadow
-        p-3 sm:p-4 md:p-6
-        flex flex-col
-        items-center sm:items-start
-        text-center sm:text-left
-        hover:shadow-md
-        transition
-      "
+                className="bg-white rounded-2xl shadow p-3 sm:p-4 md:p-6 flex flex-col items-center sm:items-start text-center sm:text-left hover:shadow-md transition"
               >
                 <span className="text-xs sm:text-sm text-gray-500">
                   {stat.label}
                 </span>
-
                 <span className="mt-1 sm:mt-2 text-xl sm:text-2xl md:text-3xl font-bold text-orange-500">
                   {stat.value}
                 </span>
               </div>
             ))}
           </div>
-
 
           {/* ===== TODAY ===== */}
           <h2 className="text-lg md:text-xl font-semibold mt-8 text-gray-700">

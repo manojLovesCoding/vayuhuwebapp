@@ -3,10 +3,15 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 // ------------------------------------
+// ✅ Set Indian Standard Time
+// ------------------------------------
+date_default_timezone_set('Asia/Kolkata');
+
+// ------------------------------------
 // Load Environment & Centralized CORS
 // ------------------------------------
-require_once __DIR__ . '/config/env.php';   // loads $_ENV['JWT_SECRET']
-require_once __DIR__ . '/config/cors.php';  // centralized CORS headers & OPTIONS handling
+require_once __DIR__ . '/config/env.php';
+require_once __DIR__ . '/config/cors.php';
 
 // ------------------------------------
 // JWT Secret
@@ -40,13 +45,15 @@ try {
 
     try {
         $decoded = JWT::decode($token, new Key($secret_key, 'HS256'));
-        $decoded_user_id = $decoded->data->id; // ID from the secure token
+        $decoded_user_id = $decoded->data->id;
     } catch (Exception $e) {
-        http_response_code(401); // Unauthorized
+        http_response_code(401);
         throw new Exception("Invalid or expired token.");
     }
 
+    // ------------------------------------
     // Read request body
+    // ------------------------------------
     $raw = file_get_contents("php://input");
     $data = json_decode($raw, true);
 
@@ -59,7 +66,9 @@ try {
         throw new Exception("Invalid user_id.");
     }
 
-    // SECURITY CHECK: Ensure token ID matches requested user_id
+    // ------------------------------------
+    // SECURITY CHECK
+    // ------------------------------------
     if ($decoded_user_id !== $user_id) {
         http_response_code(403);
         echo json_encode([
@@ -70,7 +79,7 @@ try {
     }
 
     // ------------------------------------
-    // Fetch all bookings for the user
+    // Fetch bookings
     // ------------------------------------
     $stmt = $conn->prepare("
         SELECT 
@@ -109,7 +118,8 @@ try {
     $result = $stmt->get_result();
 
     $bookings = [];
-    $today = date("Y-m-d");
+    $today = date("Y-m-d"); // IST
+
     $summary = [
         "total" => 0,
         "ongoing" => 0,
@@ -118,7 +128,12 @@ try {
     ];
 
     while ($row = $result->fetch_assoc()) {
-        // Format times
+
+        // --- Keep raw date for logic ---
+        $raw_start = $row['start_date'];
+        $raw_end   = $row['end_date'];
+
+        // --- Format time ---
         if (!empty($row['start_time'])) {
             $row['start_time'] = date("h:i A", strtotime($row['start_time']));
         }
@@ -126,19 +141,19 @@ try {
             $row['end_time'] = date("h:i A", strtotime($row['end_time']));
         }
 
-        // Format dates
-        $row['start_date'] = date("Y-m-d", strtotime($row['start_date']));
-        $row['end_date']   = date("Y-m-d", strtotime($row['end_date']));
+        // --- Format date (UI format) ---
+        $row['start_date'] = date("M d, Y", strtotime($raw_start));
+        $row['end_date']   = date("M d, Y", strtotime($raw_end));
 
         $bookings[] = $row;
         $summary["total"]++;
 
-        // Categorize bookings
-        if ($row['start_date'] <= $today && $row['end_date'] >= $today) {
+        // --- Use RAW dates for logic ---
+        if ($raw_start <= $today && $raw_end >= $today) {
             $summary["ongoing"]++;
-        } elseif ($row['end_date'] < $today) {
+        } elseif ($raw_end < $today) {
             $summary["completed"]++;
-        } elseif ($row['start_date'] > $today) {
+        } elseif ($raw_start > $today) {
             $summary["upcoming"]++;
         }
     }
