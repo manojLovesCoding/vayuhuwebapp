@@ -64,11 +64,11 @@ const Footer = () => {
           <div className="flex flex-col gap-3 text-sm">
             <div className="flex justify-center md:justify-start items-center gap-2">
               <MapPin size={18} className="text-orange-500" />
-              <span>25 Kalpana Chawla Road, Bangalore 560094</span>
+              <span className="text-white">25 Kalpana Chawla Road, <br/>Bangalore 560094</span>
             </div>
             <div className="flex justify-center md:justify-start items-center gap-2">
               <Phone size={18} className="text-orange-500" />
-              <a href="tel:+917348857574" className="hover:text-white transition">
+              <a href="tel:+917348857574" className="text-white transition">
                 +91 73488 57574
               </a>
             </div>
@@ -76,7 +76,7 @@ const Footer = () => {
               <Mail size={18} className="text-orange-500" />
               <a
                 href="mailto:support@vayuhu.com"
-                className="hover:text-white transition"
+                className="text-white transition"
               >
                 support@vayuhu.com
               </a>
