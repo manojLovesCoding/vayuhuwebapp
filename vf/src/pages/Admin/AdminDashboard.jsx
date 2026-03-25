@@ -66,7 +66,9 @@ const ReservationsTable = React.memo(({ reservations }) => (
             <td className="p-2 border">{r.name}</td>
             <td className="p-2 border">{r.mobile_no}</td>
             <td className="p-2 border">{r.space}</td>
-            <td className="p-2 border">{r.space_code}</td>
+            <td className="p-2 border">
+              {r.seat_codes || r.space_code}
+            </td>
             <td className="p-2 border">{r.pack}</td>
             <td className="py-2 px-4 border whitespace-nowrap">
               {r.date && r.end_date
