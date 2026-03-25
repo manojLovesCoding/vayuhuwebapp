@@ -51,9 +51,12 @@ const getTodayIST = () => {
 
 const generateTimeOptions = () => {
   const times = [];
-  // Workspace hours 08:00 AM → 07:45 PM
+  // Workspace hours 08:00 AM → 07:00 PM (Last Start Time)
   for (let hour = 8; hour <= 19; hour++) {
     for (let min = 0; min < 60; min += 15) {
+      // REQUIREMENT SOLUTION: Stop generating options after 07:00 PM
+      if (hour === 19 && min > 0) break; 
+
       const h12 = hour % 12 === 0 ? 12 : hour % 12;
       const ampm = hour < 12 ? "AM" : "PM";
 
@@ -525,6 +528,17 @@ const WorkspacePricing = () => {
   };
 
   const confirmCodeSelection = (selectedIds, planType) => {
+
+    // Check if any of the newly selected IDs are already in the cart
+    const alreadyInCart = selectedIds.some(id =>
+      cart.some(cartItem => cartItem.all_space_ids.includes(id))
+    );
+
+    if (alreadyInCart) {
+      toast.error("One or more selected seats are already in your cart.");
+      return;
+    }
+
     if (!selectedIds || selectedIds.length === 0) {
       toast.error("Please select at least one seat.");
       return;
@@ -676,35 +690,43 @@ const WorkspacePricing = () => {
   };
 
   const renderSeat = (c) => {
+    // REQUIREMENT: Check if this specific seat is already in the cart
+    const isInCart = cart.some((cartItem) =>
+      cartItem.all_space_ids.includes(c.id)
+    );
+
     const isSelected = codeSelectModal.selectedIds.includes(c.id);
-    const isDisabled = !c.raw.is_available;
+    // Disable if it's not available OR already in the user's cart
+    const isDisabled = !c.raw.is_available || isInCart;
 
     return (
       <motion.button
         key={c.id}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={!isDisabled ? { scale: 1.1 } : {}}
+        whileTap={!isDisabled ? { scale: 0.95 } : {}}
         disabled={isDisabled}
         title={
-          isDisabled
-            ? (() => {
-              const reason = c.raw.availability_reason || "";
-              const endDate = c.raw.end_date || "";
-              const endTime = c.raw.end_time || "";
-              if (
-                endTime &&
-                endDate === getTodayIST()
-              ) {
-                const [hour, minute] = endTime.split(":");
-                const formattedHour = hour % 12 || 12;
-                const ampm = hour >= 12 ? "PM" : "AM";
-                return `Booked until ${formattedHour}:${minute} ${ampm} today`;
-              }
-              return reason;
-            })()
-            : isSelected
-              ? "Click to Deselect"
-              : "Available"
+          isInCart
+            ? "Already in your cart"
+            : isDisabled
+              ? (() => {
+                const reason = c.raw.availability_reason || "";
+                const endDate = c.raw.end_date || "";
+                const endTime = c.raw.end_time || "";
+                if (
+                  endTime &&
+                  endDate === getTodayIST()
+                ) {
+                  const [hour, minute] = endTime.split(":");
+                  const formattedHour = hour % 12 || 12;
+                  const ampm = hour >= 12 ? "PM" : "AM";
+                  return `Booked until ${formattedHour}:${minute} ${ampm} today`;
+                }
+                return reason;
+              })()
+              : isSelected
+                ? "Click to Deselect"
+                : "Available"
         }
         onClick={() => {
           if (!isDisabled) {
@@ -722,11 +744,13 @@ const WorkspacePricing = () => {
           }
         }}
         className={`w-14 h-10 rounded-md flex items-center justify-center text-xs font-semibold transition-all border
-        ${isDisabled
-            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-            : isSelected
-              ? "bg-orange-500 text-white border-orange-600 scale-105 shadow-md"
-              : "bg-green-100 text-gray-700 border-green-300 hover:bg-green-200"
+        ${isInCart
+            ? "bg-blue-100 text-blue-500 border-blue-300 cursor-not-allowed" // UI for In-Cart items
+            : isDisabled
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : isSelected
+                ? "bg-orange-500 text-white border-orange-600 scale-105 shadow-md"
+                : "bg-green-100 text-gray-700 border-green-300 hover:bg-green-200"
           }`}
       >
         {c.code}
@@ -927,6 +951,10 @@ const WorkspacePricing = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-4 h-4 md:w-5 md:h-5 bg-gray-200 border border-gray-300 rounded-md"></span>
                   <span>Unavailable</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 md:w-5 md:h-5 bg-blue-100 border border-blue-200 rounded-md"></span>
+                  <span>In Cart</span>
                 </div>
               </div>
               <div className="sticky bottom-0 bg-white pt-3 border-t flex flex-col sm:flex-row gap-3 justify-between items-center">
