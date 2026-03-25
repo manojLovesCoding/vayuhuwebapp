@@ -190,53 +190,36 @@ const CartDrawer = ({ open, onClose }) => {
 
 
             const bulkBookingData = cart.map((item) => {
-
-              const itemSubtotal = item.final_amount / 1.18;
+              // Ensure we don't send 0.00 by checking if the value exists
+              const finalAmt = Number(item.final_amount) || 0;
+              const itemSubtotal = finalAmt / 1.18;
+              const itemGst = finalAmt - itemSubtotal;
 
               return {
-
                 user_id: user?.id,
-
                 space_id: item.id,
-
                 workspace_title: item.title,
-
-                plan_type: item.plan_type,
-
+                plan_type: item.plan_type, // Ensure this matches 'Hourly', 'Daily', etc.
                 start_date: item.start_date,
-
                 end_date: item.end_date,
-
                 start_time: item.start_time,
-
                 end_time: item.end_time,
-
                 total_days: item.total_days,
-
                 total_hours: item.total_hours,
-
                 num_attendees: item.num_attendees,
 
-                base_amount: itemSubtotal.toFixed(2),
-
-                gst_amount: (item.final_amount - itemSubtotal).toFixed(2),
-
-                final_amount: Number(item.final_amount).toFixed(2),
-
-                price_per_unit: Number(item.price_per_unit || 0).toFixed(2),
+                // FIX: Ensure these names match what add_bulk_bookings.php expects
+                price_per_unit: Number(item.price_per_unit || 0),
+                base_amount: itemSubtotal,
+                gst_amount: itemGst,
+                final_amount: finalAmt,
 
                 coupon_code: item.coupon_code || null,
-
                 referral_source: item.referral || null,
-
                 terms_accepted: 1,
-
-                payment_id: response.razorpay_payment_id,
-
+                payment_id: response.razorpay_payment_id, // This MUST be passed here
                 seat_codes: item.seat_codes || "",
-
               };
-
             });
 
 
@@ -464,17 +447,12 @@ const CartDrawer = ({ open, onClose }) => {
 
 
 const CartItem = ({ item, removeFromCart, isOpen, toggle }) => {
-
   const itemSubtotal = item.final_amount / 1.18;
-
   const itemGst = item.final_amount - itemSubtotal;
 
   return (
-
     <motion.div layout className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 relative group">
-
       <div className="flex justify-between items-start mb-2">
-
         <span className="px-2 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded tracking-wide">
           {item.plan_type}
         </span>
@@ -485,17 +463,19 @@ const CartItem = ({ item, removeFromCart, isOpen, toggle }) => {
         >
           <Trash2 size={16} />
         </button>
-
       </div>
 
-
-      <h4 className="font-bold text-gray-900 text-base mb-2">
-        {item.title}
-      </h4>
-
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="font-bold text-gray-900 text-base">
+          {item.title}
+        </h4>
+        {/* ✅ ADDED: Unit Price Badge */}
+        <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+          ₹{Number(item.price_per_unit || 0).toFixed(2)} / Unit
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 gap-1 text-gray-500 text-sm">
-
         <div className="flex items-center">
           <Calendar size={14} className="mr-2" />
           {formatDateDMY(item.start_date)}
@@ -503,45 +483,30 @@ const CartItem = ({ item, removeFromCart, isOpen, toggle }) => {
             ` → ${formatDateDMY(item.end_date)}`}
         </div>
 
-
         {item.seat_codes && (
-
           <div className="flex items-center text-blue-600 font-medium">
             <MapPin size={14} className="mr-2" />
             Seats: {item.seat_codes}
           </div>
-
         )}
 
-
         {item.plan_type?.toLowerCase() === "hourly" && (
-
           <div className="flex items-center">
             <Clock size={14} className="mr-2" />
             {formatTime12Hour(item.start_time)} - {formatTime12Hour(item.end_time)}
           </div>
-
         )}
-
       </div>
-
 
       <div
         className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center cursor-pointer"
         onClick={toggle}
       >
-
-        <p className="text-sm text-gray-500">
-          Price Breakdown
-        </p>
-
+        <p className="text-sm text-gray-500">Price Breakdown</p>
         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-
       </div>
 
-
       {isOpen && (
-
         <div className="mt-2 text-gray-600 text-sm space-y-1 pl-2">
 
           <div className="flex justify-between">
@@ -554,22 +519,15 @@ const CartItem = ({ item, removeFromCart, isOpen, toggle }) => {
             <span>₹{itemGst.toFixed(2)}</span>
           </div>
 
-          <div className="flex justify-between font-bold text-gray-900">
+          <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-gray-50">
             <span>Total</span>
             <span>₹{Number(item.final_amount).toFixed(2)}</span>
           </div>
-
         </div>
-
       )}
-
     </motion.div>
-
   );
-
 };
-
-
 
 const SummaryLine = ({ label, value }) => (
 

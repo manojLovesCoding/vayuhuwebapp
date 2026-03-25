@@ -55,7 +55,7 @@ const generateTimeOptions = () => {
   for (let hour = 8; hour <= 19; hour++) {
     for (let min = 0; min < 60; min += 15) {
       // REQUIREMENT SOLUTION: Stop generating options after 07:00 PM
-      if (hour === 19 && min > 0) break; 
+      if (hour === 19 && min > 0) break;
 
       const h12 = hour % 12 === 0 ? 12 : hour % 12;
       const ampm = hour < 12 ? "AM" : "PM";
@@ -1241,7 +1241,11 @@ const WorkspacePricing = () => {
                         end_time: endTime,
                         total_days: days,
                         total_hours: totalHours,
-                        num_attendees: numAttendees, // Simple and uses your existing state
+                        num_attendees: numAttendees,
+
+                        // ✅ ADD THIS LINE BELOW
+                        price_per_unit: modalData.price,
+
                         final_amount: parseFloat(finalTotal),
                         seat_codes: modalData.selectedCodes
                       };

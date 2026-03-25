@@ -2,13 +2,14 @@
 // -------------------------
 // Load Environment & CORS
 // -------------------------
-require_once __DIR__ . '/config/env.php';   
-require_once __DIR__ . '/config/cors.php';  
+require_once __DIR__ . '/config/env.php';
+require_once __DIR__ . '/config/cors.php';
 
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -16,10 +17,8 @@ $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 try {
     // ---------------- JWT CHECK (Updated) ----------------
-    // 1. Try to get token from Cookie first (for HttpOnly cookies)
     $token = $_COOKIE['auth_token'] ?? null;
 
-    // 2. Fallback: Try to get token from Authorization header
     if (!$token) {
         $headers = getallheaders();
         $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? null;
@@ -79,6 +78,9 @@ try {
         $seat_codes      = is_array($seat_codes_raw) ? implode(", ", $seat_codes_raw) : trim($seat_codes_raw);
         $workspace_title = trim($data['workspace_title'] ?? '');
         $plan_type       = strtolower(trim($data['plan_type'] ?? ''));
+        // Correct Enum casing for DB: 'hourly' -> 'Hourly'
+        $plan_type_db    = ucfirst($plan_type);
+
         $start_date      = trim($data['start_date'] ?? '');
         $end_date        = trim($data['end_date'] ?? '');
         $start_time      = trim($data['start_time'] ?? null);
@@ -86,11 +88,14 @@ try {
         $total_days      = (int)($data['total_days'] ?? 1);
         $total_hours     = (int)($data['total_hours'] ?? 1);
         $num_attendees   = (int)($data['num_attendees'] ?? 1);
+
+        // Removed round() to preserve decimal paise values
         $price_per_unit  = (float)($data['price_per_unit'] ?? 0);
-        $base_amount     = round((float)($data['base_amount'] ?? 0));
-        $gst_amount      = round((float)($data['gst_amount'] ?? 0));
-        $discount_amount = round((float)($data['discount_amount'] ?? 0));
-        $final_amount    = round((float)($data['final_amount'] ?? 0));
+        $base_amount     = (float)($data['base_amount'] ?? 0);
+        $gst_amount      = (float)($data['gst_amount'] ?? 0);
+        $discount_amount = (float)($data['discount_amount'] ?? 0);
+        $final_amount    = (float)($data['final_amount'] ?? 0);
+
         $coupon_code     = trim($data['coupon_code'] ?? '');
         $referral_source = trim($data['referral_source'] ?? '');
         $terms_accepted  = (int)($data['terms_accepted'] ?? 0);
@@ -110,7 +115,7 @@ try {
         // Conflict Check
         $stmt = $conn->prepare("
             SELECT plan_type FROM workspace_bookings
-            WHERE space_id = ?
+            WHERE space_id = ? AND status != 'cancelled'
               AND (
                   (plan_type = 'hourly' AND start_date = ? AND NOT (? <= start_time OR ? >= end_time))
                OR (plan_type = 'daily' AND start_date = ?)
@@ -131,23 +136,43 @@ try {
         $responseIds[] = $booking_id;
         $status = 'confirmed';
 
+        // UPDATED: Added payment_id to INSERT columns
         $stmt = $conn->prepare("
             INSERT INTO workspace_bookings (
                 booking_id, user_id, space_id, seat_codes, workspace_title, plan_type,
                 start_date, end_date, start_time, end_time,
                 total_days, total_hours, num_attendees,
                 price_per_unit, base_amount, gst_amount, discount_amount, final_amount,
-                coupon_code, referral_source, terms_accepted, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                coupon_code, referral_source, terms_accepted, status, payment_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
+        // UPDATED: Added payment_id to bind_param (23 placeholders)
         $stmt->bind_param(
-            "siisssssssiidddddssiss",
-            $booking_id, $user_id, $space_id, $seat_codes, $workspace_title, $plan_type,
-            $start_date, $end_date, $start_time, $end_time,
-            $total_days, $total_hours, $num_attendees,
-            $price_per_unit, $base_amount, $gst_amount, $discount_amount, $final_amount,
-            $coupon_code, $referral_source, $terms_accepted, $status
+            "siisssssssiidddddssisss",
+            $booking_id,
+            $user_id,
+            $space_id,
+            $seat_codes,
+            $workspace_title,
+            $plan_type_db,
+            $start_date,
+            $end_date,
+            $start_time,
+            $end_time,
+            $total_days,
+            $total_hours,
+            $num_attendees,
+            $price_per_unit,
+            $base_amount,
+            $gst_amount,
+            $discount_amount,
+            $final_amount,
+            $coupon_code,
+            $referral_source,
+            $terms_accepted,
+            $status,
+            $payment_id
         );
 
         if (!$stmt->execute()) {
@@ -164,7 +189,6 @@ try {
         "message" => "All bookings confirmed successfully.",
         "booking_ids" => $responseIds
     ]);
-
 } catch (Exception $e) {
     if (isset($conn) && $conn instanceof mysqli && $conn->connect_errno == 0) {
         $conn->rollback();
@@ -173,4 +197,3 @@ try {
     http_response_code(strpos($e->getMessage(), "token") !== false ? 401 : 400);
     echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
-?>
