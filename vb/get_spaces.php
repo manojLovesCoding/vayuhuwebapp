@@ -53,6 +53,7 @@ if ($result && $result->num_rows > 0) {
             $row[$k] = $v ?? "";
         }
 
+        // Image URL
         if (!empty($row["image"])) {
             $row["image_url"] = $baseURL . "/" . $row["image"];
         } else {
@@ -62,51 +63,43 @@ if ($result && $result->num_rows > 0) {
         $spaceId = (int)$row["id"];
         $currentSpaceCode = $row["space_code"];
 
-        // ✅ FIXED MONTHLY CONDITION HERE
+        // ------------------------------------
+        // ✅ FIXED: REMOVE HOURLY BLOCKING
+        // Only DAILY + MONTHLY block full day
+        // ------------------------------------
         $checkSql = "
-            SELECT start_date, end_date, start_time, end_time, plan_type
+            SELECT start_date, end_date, plan_type
             FROM workspace_bookings
             WHERE (space_id = ? OR seat_codes LIKE ?)
-              AND status IN ('Confirmed', 'Pending')
+              AND status IN ('confirmed', 'pending')
               AND (
-                    (plan_type = 'hourly'  AND start_date = ?)
-                 OR (plan_type = 'daily'   AND start_date = ?)
+                    (plan_type = 'daily'   AND start_date = ?)
                  OR (plan_type = 'monthly' AND ? BETWEEN start_date AND end_date)
               )
-            ORDER BY start_date ASC
             LIMIT 1
         ";
 
         $codeSearch = "%" . $currentSpaceCode . "%";
         $stmt = $conn->prepare($checkSql);
 
-        $bookedRow = null;
         $isAvailable = true;
 
         if ($stmt) {
-            $stmt->bind_param("issss", $spaceId, $codeSearch, $today, $today, $today);
+            $stmt->bind_param("isss", $spaceId, $codeSearch, $today, $today);
             $stmt->execute();
             $res2 = $stmt->get_result();
 
             if ($res2 && $res2->num_rows > 0) {
-                $bookedRow = $res2->fetch_assoc();
-
-                if ($bookedRow["plan_type"] === "hourly") {
-                    $now = new DateTime();
-                    $bookingStart = new DateTime($bookedRow["start_date"] . " " . $bookedRow["start_time"]);
-                    $bookingEnd   = new DateTime($bookedRow["start_date"] . " " . $bookedRow["end_time"]);
-
-                    if ($now >= $bookingStart && $now <= $bookingEnd) {
-                        $isAvailable = false;
-                    }
-                } else {
-                    // Daily or Monthly booking blocking today
-                    $isAvailable = false;
-                }
+                // ❌ Block full day ONLY for daily/monthly
+                $isAvailable = false;
             }
+
             $stmt->close();
         }
 
+        // ------------------------------------
+        // Final Availability Status
+        // ------------------------------------
         if ($row["status"] !== "Active") {
             $row["is_available"] = false;
             $row["availability_reason"] = "Space inactive";
@@ -114,6 +107,7 @@ if ($result && $result->num_rows > 0) {
             $row["is_available"] = false;
             $row["availability_reason"] = "Booked";
         } else {
+            // ✅ Hourly bookings DO NOT block full day anymore
             $row["is_available"] = true;
             $row["availability_reason"] = "Available for booking";
         }
