@@ -644,6 +644,17 @@ const WorkspacePricing = () => {
       toast.dismiss(toastId);
 
       if (data.success) {
+        // 🚨 ADD THIS CHECK FOR MONTHLY BOOKINGS
+        if (modalData.planType === "Monthly") {
+          // If backend sends available_dates, block
+          if (data.available_dates?.from) {
+            toast.error(
+              `This seat is already booked. Available from ${formatToISTDate(data.available_dates.from)}`
+            );
+            return;
+          }
+        }
+
         setStep(2);
       } else {
         // ✅ CASE 1: FULL DATE BLOCKED (monthly/daily booking exists)
@@ -1325,6 +1336,7 @@ const WorkspacePricing = () => {
                                 }, { withCredentials: true });
 
                                 if (finalBooking.data.success) {
+                                  
                                   toast.success("🎉 Booking confirmed!");
                                   const userData = JSON.parse(localStorage.getItem("user"));
                                   const bookingId = finalBooking.data.booking_id || finalBooking.data.id || 0;
@@ -1332,22 +1344,22 @@ const WorkspacePricing = () => {
                                   // --- FIXED EMAIL CALL BELOW ---
                                   await axios.post(`${API_BASE_URL}/send_booking_email.php`, {
                                     booking_id: bookingId,
-                                    user_name: userData?.name || "Customer",
-                                    user_id: getUserId(),
-                                    user_email: userData?.email || "",
                                     workspace_title: modalData.title,
                                     plan_type: modalData.planType,
                                     start_date: startDate,
                                     end_date: endDate,
                                     start_time: startTime,
                                     end_time: endTime,
-                                    num_attendees: numAttendees, // Added this line so email script sees it
+                                    num_attendees: numAttendees,
                                     total_amount: Number(finalTotal).toFixed(2),
                                     seat_codes: modalData.selectedCodes
                                   }, { withCredentials: true });
 
                                   resetState();
-                                  navigate("/dashboard");
+                                  // Navigate after 1 second
+                                  setTimeout(() => {
+                                    navigate("/dashboard");
+                                  }, 200); // 1000ms = 1 second
                                 } else {
                                   toast.error(finalBooking.data.message || "Booking failed");
                                 }

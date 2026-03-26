@@ -16,14 +16,13 @@ header("Content-Type: application/json; charset=UTF-8");
 // JWT VERIFICATION
 // ------------------------------------
 require_once __DIR__ . '/vendor/autoload.php';
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 try {
-
-
 
     $token = $_COOKIE['auth_token'] ?? null;
 
@@ -38,10 +37,6 @@ try {
         http_response_code(401);
         throw new Exception("Invalid or expired token. Please log in again.");
     }
-
-
-
-
 
     include 'db.php';
 
@@ -62,9 +57,6 @@ try {
     }
 
     // Standardize time formats for comparison
-
-
-
     if ($start_time && strlen($start_time) === 5) $start_time .= ":00";
     if ($end_time && strlen($end_time) === 5) $end_time .= ":00";
 
@@ -76,6 +68,36 @@ try {
             throw new Exception("Bookings must be in full-hour increments.");
         }
     }
+
+    // =====================================================
+    // ✅ NEW: STRICT MONTHLY BOOKING BLOCK (ADDED)
+    // =====================================================
+    if ($plan_type === 'monthly') {
+        $monthlyCheck = $conn->prepare("
+            SELECT MAX(end_date) as last_end
+            FROM workspace_bookings
+            WHERE space_id = ?
+              AND plan_type = 'monthly'
+              AND status IN ('confirmed', 'pending')
+        ");
+        $monthlyCheck->bind_param("i", $space_id);
+        $monthlyCheck->execute();
+        $res = $monthlyCheck->get_result()->fetch_assoc();
+
+        if ($res && $res['last_end']) {
+            if ($start_date <= $res['last_end']) {
+                echo json_encode([
+                    "success" => false,
+                    "message" => "This Selected Seat is booked.",
+                    "available_dates" => [
+                        "from" => date('Y-m-d', strtotime($res['last_end'] . ' +1 day'))
+                    ]
+                ]);
+                exit;
+            }
+        }
+    }
+    // =====================================================
 
     // ------------------------------------
     // EXISTING BOOKINGS CHECK
@@ -93,21 +115,12 @@ try {
     ");
     $stmt->bind_param("issssss", $space_id, $start_date, $end_time, $start_time, $start_date, $start_date, $end_date);
 
-
-
-
-
-
-
-
-
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result && $result->num_rows > 0) {
         $hasFullDayBlock = false;
         $blockedEndDate = null;
-        
 
         while ($row = $result->fetch_assoc()) {
 
@@ -120,27 +133,22 @@ try {
             }
         }
 
-
         if ($hasFullDayBlock) {
             $nextAvailableDate = date('Y-m-d', strtotime($blockedEndDate . ' +1 day'));
             echo json_encode([
                 "success" => false,
-                //"message" => "This workspace is fully booked for the selected date.",
                 "message" => "This Selected Seat is booked.",
                 "available_dates" => ["from" => $nextAvailableDate]
-
-
             ]);
             exit;
         }
 
-        // If Hourly Conflict: Suggest 1-hour slots matching 15-min intervals
+        // If Hourly Conflict
         if ($plan_type === 'hourly') {
             $bookStmt = $conn->prepare("
                 SELECT start_time, end_time
                 FROM workspace_bookings
                 WHERE space_id = ? AND start_date = ? AND status IN ('confirmed', 'pending')
-
                 ORDER BY start_time ASC
             ");
             $bookStmt->bind_param("is", $space_id, $start_date);
@@ -153,33 +161,25 @@ try {
             }
             $bookStmt->close();
 
-
-
             $availableSlots = [];
-            // Office Hours: 08:00 to 20:00 (8 PM)
-            // We check every 15-minute start possibility
             for ($h = 8; $h < 20; $h++) {
                 for ($m = 0; $m < 60; $m += 15) {
                     $slotStart = sprintf("%02d:%02d:00", $h, $m);
-                    // End time is exactly 1 hour later per your requirement
                     $slotEnd = sprintf("%02d:%02d:00", $h + 1, $m);
-                    
+
                     if ($h + 1 > 20 || ($h + 1 == 20 && $m > 0)) continue;
 
                     $isAvailable = true;
                     foreach ($bookedRanges as $b) {
-                        // Overlap logic
                         if (!($slotEnd <= $b['start'] || $slotStart >= $b['end'])) {
                             $isAvailable = false;
                             break;
                         }
                     }
 
-
                     if ($isAvailable) {
                         $availableSlots[] = date("g:i A", strtotime($slotStart)) . " - " . date("g:i A", strtotime($slotEnd));
                     }
-
                 }
             }
 
@@ -192,32 +192,11 @@ try {
         }
 
         echo json_encode(["success" => false, "message" => "Workspace unavailable for selected dates."]);
-
-
-
-
         exit;
     }
 
-
     echo json_encode(["success" => true, "message" => "Workspace available!"]);
-
-
-
-
-
-
-
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode(["success" => false, "message" => $e->getMessage()]);
-
-
-
-
-
-
-
-
 }
-?>

@@ -237,11 +237,6 @@ const CartDrawer = ({ open, onClose }) => {
             await axios.post(
               `${API_URL}/send_booking_email.php`,
               {
-                user_id: user?.id,
-                user_email: user?.email,
-                user_name: user?.name || "Customer", // Added name
-                total_amount: Number(totalAmount).toFixed(2),
-                // Map the cart to ensure keys match exactly what PHP expects
                 bookings: cart.map(item => ({
                   workspace_title: item.title,
                   plan_type: item.plan_type,
@@ -249,12 +244,12 @@ const CartDrawer = ({ open, onClose }) => {
                   end_date: item.end_date,
                   start_time: item.start_time,
                   end_time: item.end_time,
-                  num_attendees: item.num_attendees, // Now correctly passed from cart state
+                  num_attendees: item.num_attendees,
                   seat_codes: item.seat_codes || "",
                   final_amount: Number(item.final_amount).toFixed(2),
-                  // If your bulk booking response returns IDs, you can map them here
                   booking_id: item.booking_id || ""
                 })),
+                total_amount: Number(totalAmount).toFixed(2)
               },
               { withCredentials: true }
             );
