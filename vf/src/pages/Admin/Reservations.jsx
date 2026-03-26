@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
-// Helper: Format date string to DD/MM/YYYY
+// Helpers for formatting
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
   const dt = new Date(dateStr);
@@ -13,10 +13,8 @@ const formatDate = (dateStr) => {
   return dt.toLocaleDateString("en-GB");
 };
 
-// Helper: Format booked_on to 'MMM DD, YYYY hh:mm AM/PM'
 const formatBookedOn = (datetimeStr) => {
   if (!datetimeStr) return "-";
-  // Replace space with T for ISO parsing if needed
   const dt = new Date(datetimeStr.replace(" ", "T"));
   if (isNaN(dt)) return datetimeStr;
 
@@ -25,7 +23,6 @@ const formatBookedOn = (datetimeStr) => {
     day: "2-digit",
     year: "numeric",
   });
-
   const timePart = dt.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
@@ -36,8 +33,12 @@ const formatBookedOn = (datetimeStr) => {
 };
 
 const Reservations = () => {
+  const today = new Date();
   const [reservations, setReservations] = useState([]);
   const [search, setSearch] = useState("");
+  const [monthFilter, setMonthFilter] = useState(
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
 
@@ -46,7 +47,6 @@ const Reservations = () => {
       const response = await axios.get(`${API_BASE}/get_reservations.php`, {
         withCredentials: true,
       });
-
       if (response.data.success) {
         setReservations(response.data.reservations || []);
       } else {
@@ -55,7 +55,7 @@ const Reservations = () => {
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-        "Something went wrong while fetching reservations!",
+        "Something went wrong while fetching reservations!"
       );
     }
   };
@@ -64,25 +64,33 @@ const Reservations = () => {
     fetchReservations();
   }, []);
 
+  // Filter reservations by search + month
   const filteredReservations = reservations.filter((res) => {
     const term = search.toLowerCase();
-    return (
+    const matchesSearch =
       res.name?.toLowerCase().includes(term) ||
       res.mobile_no?.includes(term) ||
       res.space?.toLowerCase().includes(term) ||
       res.space_code?.toLowerCase().includes(term) ||
-      res.seat_codes?.toLowerCase().includes(term)
-    );
+      res.seat_codes?.toLowerCase().includes(term);
+
+    let matchesMonth = true;
+    if (monthFilter) {
+      const [year, month] = monthFilter.split("-");
+      const resDate = new Date(res.date);
+      matchesMonth =
+        resDate.getFullYear() === Number(year) &&
+        resDate.getMonth() + 1 === Number(month);
+    }
+
+    return matchesSearch && matchesMonth;
   });
+
 
   const indexOfLast = currentPage * entriesPerPage;
   const indexOfFirst = indexOfLast - entriesPerPage;
-  const currentReservations = filteredReservations.slice(
-    indexOfFirst,
-    indexOfLast,
-  );
+  const currentReservations = filteredReservations.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredReservations.length / entriesPerPage);
-
 
   return (
     <div className="p-4 md:p-6 mt-10">
@@ -108,6 +116,19 @@ const Reservations = () => {
             <span>entries</span>
           </div>
 
+          <div className="flex items-center gap-2">
+            <span>Month:</span>
+            <input
+              type="month"
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border px-2 py-1 rounded"
+            />
+          </div>
+
           <input
             type="text"
             value={search}
@@ -118,7 +139,8 @@ const Reservations = () => {
         </div>
       </div>
 
-      {/* ================= MOBILE VIEW ================= */}
+
+      {/* MOBILE VIEW */}
       <div className="md:hidden space-y-4">
         {currentReservations.length ? (
           currentReservations.map((res, index) => (
@@ -164,7 +186,7 @@ const Reservations = () => {
         )}
       </div>
 
-      {/* ================= DESKTOP TABLE ================= */}
+      {/* DESKTOP TABLE */}
       <div className="hidden md:block overflow-x-auto border rounded-lg">
         <table className="min-w-full bg-white text-sm">
           <thead>
@@ -193,18 +215,12 @@ const Reservations = () => {
                   key={res.id || index}
                   className="hover:bg-orange-50 text-center"
                 >
-                  <td className="border px-4 py-2">
-                    {indexOfFirst + index + 1}
-                  </td>
+                  <td className="border px-4 py-2">{indexOfFirst + index + 1}</td>
                   <td className="border px-4 py-2 font-medium">{res.name}</td>
                   <td className="border px-4 py-2">{res.mobile_no}</td>
                   <td className="border px-4 py-2">{res.space}</td>
-                  <td className="border px-4 py-2">
-                    {res.seat_codes || res.space_code}
-                  </td>
-                  <td className="border px-4 py-2 hidden lg:table-cell">
-                    {res.pack}
-                  </td>
+                  <td className="border px-4 py-2">{res.seat_codes || res.space_code}</td>
+                  <td className="border px-4 py-2 hidden lg:table-cell">{res.pack}</td>
                   <td className="border px-4 py-2">
                     {res.date && res.end_date
                       ? `${formatDate(res.date)} - ${formatDate(res.end_date)}`
@@ -215,12 +231,8 @@ const Reservations = () => {
                   <td className="border px-4 py-2 hidden lg:table-cell text-green-600 text-right">
                     {Number(res.discount) > 0 ? `-₹${res.discount}` : "₹0"}
                   </td>
-                  <td className="border px-4 py-2 text-right font-bold">
-                    ₹{res.final_total}
-                  </td>
-                  <td className="border px-4 py-2 text-xs text-gray-500">
-                    {formatBookedOn(res.booked_on)}
-                  </td>
+                  <td className="border px-4 py-2 text-right font-bold">₹{res.final_total}</td>
+                  <td className="border px-4 py-2 text-xs text-gray-500">{formatBookedOn(res.booked_on)}</td>
                 </tr>
               ))
             ) : (
@@ -255,8 +267,7 @@ const Reservations = () => {
             <button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-orange-500 text-white" : ""
-                }`}
+              className={`px-3 py-1 border rounded ${currentPage === i + 1 ? "bg-orange-500 text-white" : ""}`}
             >
               {i + 1}
             </button>

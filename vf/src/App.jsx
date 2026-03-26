@@ -89,6 +89,7 @@ const Layout = ({ children }) => {
     "/visitors-list",
     "/admin",
     "/auth", // hide header on login/signup page
+    "/reset-password"
   ];
 
   const hideHeader = hideHeaderRoutes.some((route) =>
