@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ToastContainer, toast } from "react-toastify";
@@ -28,7 +28,84 @@ const Visitors = () => {
   const [hasReservation, setHasReservation] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState("");
-  const [guestFee, setGuestFee] = useState(0);
+
+  const generateTimeOptions = () => {
+    const times = [];
+
+    for (let hour = 8; hour <= 19; hour++) {
+      for (let min = 0; min < 60; min += 15) {
+        if (hour === 19 && min > 0) break;
+
+        const h12 = hour % 12 === 0 ? 12 : hour % 12;
+        const ampm = hour < 12 ? "AM" : "PM";
+
+        const value = `${hour.toString().padStart(2, "0")}:${min
+          .toString()
+          .padStart(2, "0")}`;
+
+        const display = `${h12.toString().padStart(2, "0")}:${min
+          .toString()
+          .padStart(2, "0")} ${ampm}`;
+
+        times.push({ value, display });
+      }
+    }
+
+    return times;
+  };
+
+  const TIME_OPTIONS = generateTimeOptions();
+
+  useEffect(() => {
+    if (!formData.checkInTime) return;
+
+    const [startH, startM] = formData.checkInTime.split(":").map(Number);
+
+    let endH = startH + 1;
+    let endM = startM;
+
+    if (endH > 20 || (endH === 20 && endM > 0)) {
+      endH = 20;
+      endM = 0;
+    }
+
+    const formattedEnd = `${endH.toString().padStart(2, "0")}:${endM
+      .toString()
+      .padStart(2, "0")}`;
+
+    setFormData((prev) => ({
+      ...prev,
+      checkOutTime: formattedEnd,
+    }));
+  }, [formData.checkInTime]);
+
+  const selectedBookingData = useMemo(() => {
+    return userBookings.find((b) => b.booking_id == selectedBooking);
+  }, [selectedBooking, userBookings]);
+
+  const hours = useMemo(() => {
+    if (!formData.checkInTime || !formData.checkOutTime) return 1;
+
+    const [sh, sm] = formData.checkInTime.split(":").map(Number);
+    const [eh, em] = formData.checkOutTime.split(":").map(Number);
+
+    const start = sh * 60 + sm;
+    const end = eh * 60 + em;
+
+    return Math.max(1, Math.round((end - start) / 60));
+  }, [formData.checkInTime, formData.checkOutTime]);
+
+  const guestFee = useMemo(() => {
+    if (!selectedBookingData) return 0;
+
+    const baseRate = parseFloat(selectedBookingData.price_per_unit) || 0;
+    const attendees = Math.max(1, parseInt(formData.attendees) || 1);
+
+    const subtotal = baseRate * attendees * hours;
+    const gst = subtotal * 0.18;
+
+    return subtotal + gst;
+  }, [selectedBookingData, formData.attendees, hours]);
 
   // ---------------- FETCH ACTIVE BOOKINGS ----------------
   useEffect(() => {
@@ -80,35 +157,21 @@ const Visitors = () => {
   // ---------------- HANDLE BOOKING CHANGE ----------------
   const handleBookingChange = (e) => {
     const bookingId = e.target.value;
+
     setSelectedBooking(bookingId);
 
-    const booking = userBookings.find((b) => b.booking_id == bookingId);
-    if (booking) {
-      const baseRate = parseFloat(booking.price_per_unit) || 0;
-      const attendees = parseInt(formData.attendees) || 1;
-      const subtotal = baseRate * attendees;
-      const gst = subtotal * 0.18; // 18% GST
-      setGuestFee(subtotal + gst);
-    } else {
-      setGuestFee(0);
-    }
+    setFormData((prev) => ({
+      ...prev,
+      visitingDate: "",
+      checkInTime: "",
+      checkOutTime: "",
+    }));
   };
 
   // ---------------- HANDLE FORM INPUT CHANGE ----------------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (name === "attendees" && selectedBooking) {
-      const booking = userBookings.find((b) => b.booking_id == selectedBooking);
-      if (booking) {
-        const baseRate = parseFloat(booking.price_per_unit) || 0;
-        const attendees = parseInt(value) || 1;
-        const subtotal = baseRate * attendees;
-        const gst = subtotal * 0.18;
-        setGuestFee(subtotal + gst);
-      }
-    }
   };
 
   // ---------------- HANDLE FORM SUBMIT ----------------
@@ -151,6 +214,20 @@ const Visitors = () => {
       return;
     }
 
+    const booking = userBookings.find(
+      (b) => b.booking_id === selectedBooking
+    );
+
+    if (booking) {
+      if (
+        formData.visitingDate < booking.start_date ||
+        formData.visitingDate > booking.end_date
+      ) {
+        toast.error("Visiting date must be within your booking range!");
+        return;
+      }
+    }
+
     // ---------------- PAYMENT ----------------
     const toastId = toast.loading("Initializing payment...");
 
@@ -174,6 +251,7 @@ const Visitors = () => {
         order_id: orderRes.data.order_id,
 
         handler: async (response) => {
+          console.log("RAZORPAY RESPONSE:", response);
           toast.update(toastId, {
             render: "Verifying payment...",
             type: "info",
@@ -200,7 +278,12 @@ const Visitors = () => {
                 payment_id: response.razorpay_payment_id,
                 amount_paid: guestFee,
               },
-              { withCredentials: true } // ✅ Send HttpOnly cookie
+              {
+                withCredentials: true,
+                headers: {
+                  "Content-Type": "application/json", // ✅ MUST
+                },
+              }
             );
 
             if (saveResponse.data.success) {
@@ -265,6 +348,8 @@ const Visitors = () => {
       }
     };
   }, []);
+
+
 
   // ---------------- JSX ----------------
   return (
@@ -393,9 +478,31 @@ const Visitors = () => {
                   type="date"
                   name="visitingDate"
                   value={formData.visitingDate}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500"
-                  required
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+
+                    const booking = userBookings.find(
+                      (b) => b.booking_id == selectedBooking
+                    );
+
+                    if (booking) {
+                      const start = booking.start_date;
+                      const end = booking.end_date;
+
+                      if (selectedDate < start || selectedDate > end) {
+                        toast.error("Date must be within your booking period!");
+                        return;
+                      }
+                    }
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      visitingDate: selectedDate,
+                    }));
+                  }}
+                  min={selectedBookingData?.start_date}
+                  max={selectedBookingData?.end_date}
+                  className="w-full border border-gray-300 rounded-md p-2"
                 />
               </div>
 
@@ -403,28 +510,105 @@ const Visitors = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Check-In Time <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="time"
+
+                <select
                   name="checkInTime"
                   value={formData.checkInTime}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500"
+                  className="w-full border border-gray-300 rounded-md p-2"
                   required
-                />
+                >
+                  <option value="">Select Start Time</option>
+
+                  {TIME_OPTIONS.map((t) => {
+                    const booking = userBookings.find(
+                      (b) => b.booking_id == selectedBooking
+                    );
+
+                    if (!booking) return null;
+
+                    const bookingStart = booking.start_time;
+                    const bookingEnd = booking.end_time;
+
+                    // Allow only times inside booking range
+                    const isBeforeBooking = bookingStart && t.value < bookingStart;
+                    const isAfterBooking = bookingEnd && t.value >= bookingEnd;
+
+                    const isDisabled = isBeforeBooking || isAfterBooking;
+
+                    return (
+                      <option key={t.value} value={t.value} disabled={isDisabled}>
+                        {t.display} {isDisabled ? "(Not allowed)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Check-Out Time <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="time"
+
+                <select
                   name="checkOutTime"
                   value={formData.checkOutTime}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-orange-500"
+                  className="w-full border border-gray-300 rounded-md p-2"
+                  disabled={!formData.checkInTime}
                   required
-                />
+                >
+                  <option value="">Select End Time</option>
+
+                  {(() => {
+                    if (!formData.checkInTime) return [];
+
+                    const booking = userBookings.find(
+                      (b) => b.booking_id == selectedBooking
+                    );
+
+                    if (!booking) return [];
+
+                    const [startH, startM] = formData.checkInTime.split(":").map(Number);
+                    const bookingEnd = booking.end_time;
+
+                    const options = [];
+
+                    for (let hourStep = 1; hourStep <= 12; hourStep++) {
+                      let h = startH + hourStep;
+
+                      const val = `${h.toString().padStart(2, "0")}:${startM
+                        .toString()
+                        .padStart(2, "0")}`;
+
+                      // ❌ Stop if exceeds booking end
+                      if (bookingEnd && val > bookingEnd) break;
+
+                      if (h > 20 || (h === 20 && startM > 0)) break;
+
+                      const displayH = h % 12 === 0 ? 12 : h % 12;
+                      const ampm = h < 12 ? "AM" : "PM";
+
+                      const lbl = `${displayH.toString().padStart(2, "0")}:${startM
+                        .toString()
+                        .padStart(2, "0")} ${ampm}`;
+
+                      options.push(
+                        <option key={val} value={val}>
+                          {lbl}
+                        </option>
+                      );
+                    }
+
+                    return options;
+                  })()}
+                </select>
+
+                {formData.checkInTime && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    * Bookings are accepted in full-hour intervals only.
+                  </p>
+                )}
               </div>
             </>
           )}

@@ -25,6 +25,9 @@ $secret_key = $_ENV['JWT_SECRET'] ?? die("JWT_SECRET not set in .env");
 
 // Get JSON input
 $data = json_decode(file_get_contents("php://input"), true);
+
+error_log("RAW INPUT: " . file_get_contents("php://input"));
+error_log("DECODED DATA: " . print_r($data, true));
 if (!$data) {
     echo json_encode(["success" => false, "message" => "Invalid request data"]);
     exit;
@@ -90,6 +93,14 @@ $attendees     = (int)($data['attendees'] ?? 1);
 $payment_id    = trim($data['payment_id'] ?? "");
 $amount_paid   = (float)($data['amount_paid'] ?? 0);
 
+if (empty($payment_id)) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Payment ID missing from request"
+    ]);
+    exit;
+}
+
 // 🧠 Debug log
 error_log("DEBUG: Received payment_id = " . $payment_id);
 
@@ -110,21 +121,21 @@ $stmt = $conn->prepare($sql);
 
 // 🟢 Correct bind_param type string
 $stmt->bind_param(
-    "iissssssssssid",
-    $user_id,        // i
-    $company_id,     // i
-    $booking_id,     // i
-    $name,           // s
-    $contact,        // s
-    $email,          // s
-    $company_name,   // s
-    $visitingDate,   // s
-    $checkInTime,    // s
-    $checkOutTime,   // s
-    $reason,         // s
-    $attendees,      // i
-    $payment_id,     // s
-    $amount_paid     // d
+    "iisssssssssiss",
+    $user_id,
+    $company_id,
+    $booking_id,   // ✅ string
+    $name,
+    $contact,
+    $email,
+    $company_name,
+    $visitingDate,
+    $checkInTime,
+    $checkOutTime,
+    $reason,
+    $attendees,    // ✅ int
+    $payment_id,   // ✅ string
+    $amount_paid   // ✅ string (because DB is varchar)
 );
 
 // 🧠 Debug log
