@@ -156,7 +156,7 @@ const Visitors = () => {
 
     try {
       const orderRes = await axios.post(
-        `${API_BASE}/create_razorpay_order.php`,
+        `${API_BASE}/create_visitor_payment_order.php`,
         { amount: guestFee },
         { withCredentials: true } // ✅ Send HttpOnly cookie
       );
@@ -182,7 +182,7 @@ const Visitors = () => {
 
           try {
             const verifyRes = await axios.post(
-              `${API_BASE}/verify_payment.php`,
+              `${API_BASE}/verify_visitor_payment.php`,
               response,
               { withCredentials: true } // ✅ Send HttpOnly cookie
             );
