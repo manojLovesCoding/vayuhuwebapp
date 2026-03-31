@@ -5,7 +5,7 @@ import { assets } from "../assets/assets";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); // ✅ New state for desktop collapse
+  const [isCollapsed, setIsCollapsed] = useState(false); 
   const [showDeveloper, setShowDeveloper] = useState(false);
 
   const toggleDeveloperCredit = () => {
@@ -13,10 +13,10 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-orange-50 overflow-hidden">
       {/* ─── Sidebar ─── */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 bg-white shadow-md 
+        className={`fixed inset-y-0 left-0 z-40 bg-orange-600 text-white shadow-md 
           transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0 lg:static lg:shadow-none
@@ -27,6 +27,7 @@ const Layout = ({ children }) => {
           setIsOpen={setSidebarOpen} 
           isCollapsed={isCollapsed} 
           setIsCollapsed={setIsCollapsed} 
+          theme="orange" // You can optionally handle theme inside Sidebar
         />
       </div>
 
@@ -41,7 +42,7 @@ const Layout = ({ children }) => {
       {/* ─── Main Content Area ─── */}
       <div className="flex flex-col flex-1 h-screen overflow-hidden">
         {/* Top Bar (Mobile Only) */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-white shadow-sm">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-orange-500 shadow-sm text-white">
           <img
             src={assets.brandLogo}
             alt="Vayuhu Logo"
@@ -51,9 +52,7 @@ const Layout = ({ children }) => {
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Open Sidebar"
-            className="p-2 rounded-lg bg-white border border-gray-200 
-                       hover:bg-orange-50 text-gray-600 hover:text-orange-500 
-                       shadow-sm transition-all"
+            className="p-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white shadow-sm transition-all"
           >
             <Menu className="w-6 h-6" />
           </button>

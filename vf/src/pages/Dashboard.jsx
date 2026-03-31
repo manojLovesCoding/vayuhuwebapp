@@ -62,8 +62,7 @@ const Dashboard = () => {
   }, [userId]);
 
   // ✅ IST "Today" in same format as backend (M d, Y)
-  const todayFormatted = new Date().toLocaleDateString("en-IN", {
-    timeZone: "Asia/Kolkata",
+  const todayFormatted = new Date().toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
     year: "numeric",

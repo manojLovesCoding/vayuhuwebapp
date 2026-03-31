@@ -1,0 +1,36 @@
+To do list : 
+
+✅ FIX (SAFE WAY – DO THIS)
+🔹 Step 1: Drop foreign key
+ALTER TABLE visitors DROP FOREIGN KEY fk_visitor_booking;
+🔹 Step 2: Modify BOTH tables
+ALTER TABLE workspace_bookings 
+MODIFY booking_id VARCHAR(50) 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE visitors 
+MODIFY booking_id VARCHAR(50) 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+ALTER TABLE booking_attendees 
+MODIFY booking_id VARCHAR(50) 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+🔹 Step 3: Re-add foreign key
+ALTER TABLE visitors
+ADD CONSTRAINT fk_visitor_booking
+FOREIGN KEY (booking_id)
+REFERENCES workspace_bookings(booking_id)
+ON DELETE CASCADE;
+
+Note :In hostinger, please take a backup of workspace_booking table and visitors_table and whole database before inserting step 3 in hostinger databse
+
+
+
+CREATE TABLE booking_attendees (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  booking_id VARCHAR(50),
+  employee_id INT NULL,
+  attendee_name VARCHAR(255),
+  is_host TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

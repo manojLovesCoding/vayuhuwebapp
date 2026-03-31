@@ -72,118 +72,131 @@ const Auth = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 overflow-hidden">
+    <div className="min-h-screen flex bg-gray-100">
 
-      {/* DECORATIVE BACKGROUND SHAPES */}
-      <div className="absolute top-[-150px] right-[-120px] w-[350px] h-[350px] bg-orange-300 rounded-full blur-3xl opacity-40 animate-pulse"></div>
-      <div className="absolute bottom-[-130px] left-[-80px] w-[300px] h-[140px] bg-orange-400 opacity-20 blur-xl rotate-anim rounded-2xl"></div>
+      {/* LEFT SIDE - FORM */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
 
-      {/* AUTH CARD */}
-      <div className="relative bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl w-96 z-10 border border-orange-100">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
-          {authState === "forgot" ? "Reset Password 🔑" : authState === "login" ? "Welcome Back 👋" : "Create Your Account ✨"}
-        </h2>
+          <h2 className="text-2xl font-semibold mb-2 text-gray-800">
+            {authState === "login"
+              ? "Welcome Back"
+              : authState === "signup"
+                ? "Create your Account"
+                : "Reset Password"}
+          </h2>
 
-        <form onSubmit={authState === "forgot" ? handleForgotPassword : handleSubmit}>
+          <p className="text-sm text-gray-500 mb-6">
+            {authState === "login"
+              ? "Login to continue"
+              : "Start your journey with us"}
+          </p>
 
-          {/* Name Field (Signup Only) */}
-          {authState === "signup" && (
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-              required
-            />
-          )}
+          <form onSubmit={authState === "forgot" ? handleForgotPassword : handleSubmit}>
 
-          {/* Email Field (Always) */}
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border p-3 mb-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-            required
-          />
-
-          {/* Password Field (Login/Signup Only) */}
-          {authState !== "forgot" && (
-            <div className="relative mb-1">
+            {authState === "signup" && (
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border p-3 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                type="text"
+                placeholder="Full Name"
+                className="w-full border p-3 mb-3 rounded-lg"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
+            )}
 
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full border p-3 mb-3 rounded-lg"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            {authState !== "forgot" && (
+              <div className="relative mb-3">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  className="w-full border p-3 pr-10 rounded-lg"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <Eye /> : <EyeOff />}
+                </button>
+              </div>
+            )}
+
+            {authState === "login" && (
+              <p
+                onClick={() => switchMode("forgot")}
+                className="text-right text-sm text-orange-500 cursor-pointer mb-4"
               >
-                {showPassword ? (
-                  <Eye />
-                ) : (
-                  <EyeOff />
-                )}
-              </button>
-            </div>
-          )}
+                Forgot password?
+              </p>
+            )}
 
-          {/* Forgot Password Link (Login Only) */}
-          {authState === "login" && (
-            <p
-              onClick={() => switchMode("forgot")}
-              className="text-right text-sm mb-4 text-orange-500 cursor-pointer hover:underline"
+            <button
+              type="submit"
+              className="w-full bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700"
             >
-              Forgot Password?
-            </p>
-          )}
+              {authState === "login"
+                ? "Login"
+                : authState === "signup"
+                  ? "Sign Up"
+                  : "Send Reset Link"}
+            </button>
 
-          {/* Action Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 shadow-lg text-white font-semibold py-3 rounded-lg hover:bg-orange-600 hover:shadow-xl transition-all disabled:bg-orange-300"
-          >
-            {loading ? "Processing..." : authState === "forgot" ? "Send Reset Link" : authState === "login" ? "Login" : "Sign Up"}
-          </button>
+            {message && (
+              <p className="mt-4 text-center text-sm text-gray-600">
+                {message}
+              </p>
+            )}
+          </form>
 
-          {message && (
-            <p className={`mt-4 text-center text-sm font-medium ${message.includes("error") ? "text-red-500" : "text-gray-700"}`}>
-              {message}
-            </p>
-          )}
-        </form>
-
-        {/* Footer Navigation */}
-        <div className="text-center text-sm mt-6 text-gray-700">
-          {authState === "forgot" ? (
-            <p onClick={() => switchMode("login")} className="text-orange-500 font-medium cursor-pointer hover:underline">
-              ← Back to Login
-            </p>
-          ) : (
-            <p>
-              {authState === "login" ? "Don’t have an account?" : "Already have an account?"}{" "}
-              <span
-                onClick={() => switchMode(authState === "login" ? "signup" : "login")}
-                className="text-orange-500 font-medium cursor-pointer hover:underline"
-              >
-                {authState === "login" ? "Sign Up" : "Login"}
-              </span>
-            </p>
-          )}
+          {/* Footer */}
+          <div className="text-center text-sm mt-6">
+            {authState === "login" ? (
+              <>
+                Don’t have an account?{" "}
+                <span
+                  onClick={() => switchMode("signup")}
+                  className="text-orange-600 cursor-pointer"
+                >
+                  Sign Up
+                </span>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <span
+                  onClick={() => switchMode("login")}
+                  className="text-orange-600 cursor-pointer"
+                >
+                  Login
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <style>{`
-        .rotate-anim { animation: rotate 12s linear infinite; }
-        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      `}</style>
+      {/* RIGHT SIDE - ILLUSTRATION */}
+      <div className="hidden md:flex w-1/2 items-center justify-center bg-orange-50">
+        <img
+          src="illustration.svg" // replace with your asset
+          alt="Illustration"
+          className="w-3/4"
+        />
+      </div>
+
     </div>
   );
 };
