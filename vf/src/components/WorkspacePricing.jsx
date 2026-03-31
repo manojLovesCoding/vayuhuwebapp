@@ -1290,28 +1290,36 @@ const WorkspacePricing = () => {
                         script.src = "https://checkout.razorpay.com/v1/checkout.js";
                         script.onload = async () => {
                           const bookingData = {
-                            user_id: getUserId(),
-                            space_id: modalData.id,
-                            all_space_ids: modalData.allIds || [modalData.id],
-                            workspace_title: modalData.title,
-                            plan_type: modalData.planType,
-                            start_date: startDate,
-                            end_date: endDate,
-                            start_time: startTime || null,
-                            end_time: endTime || null,
-                            total_days: days,
-                            total_hours: totalHours,
-                            num_attendees: numAttendees, // This saves to DB correctly
-                            price_per_unit: modalData.price,
-                            base_amount: displayAmount,
-                            gst_amount: parseFloat(displayGst),
-                            discount_amount: discount,
-                            final_amount: parseFloat(finalTotal),
-                            coupon_code: coupon || null,
-                            referral_source: referral || null,
-                            terms_accepted: 1,
-                            seat_codes: modalData.selectedCodes
-                          };
+  user_id: getUserId(),
+  space_id: modalData.id,
+  all_space_ids: modalData.allIds || [modalData.id],
+  workspace_title: modalData.title,
+  plan_type: modalData.planType,
+  start_date: startDate,
+  end_date: endDate,
+  start_time: startTime || null,
+  end_time: endTime || null,
+  total_days: days,
+  total_hours: totalHours,
+  num_attendees: numAttendees,
+  price_per_unit: modalData.price,
+  base_amount: displayAmount,
+  gst_amount: parseFloat(displayGst),
+  discount_amount: discount,
+  final_amount: parseFloat(finalTotal),
+  coupon_code: coupon || null,
+  referral_source: referral || null,
+  terms_accepted: 1,
+  seat_codes: modalData.selectedCodes,
+
+  // ✅ NEW FIELD
+  attendees: {
+    host: bookingUser, // full object
+    employees: userEmployees.filter(emp =>
+      selectedEmployeeIds.includes(emp.id)
+    )
+  }
+};
 
                           const orderRes = await axios.post(`${API_BASE_URL}/create_razorpay_order.php`, {
                             amount: bookingData.final_amount

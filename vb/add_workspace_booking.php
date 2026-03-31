@@ -40,6 +40,11 @@ try {
     include 'db.php';
 
     $data = json_decode(file_get_contents("php://input"), true);
+
+    $attendees = isset($data['attendees']) && is_array($data['attendees'])
+        ? $data['attendees']
+        : null;
+
     if (json_last_error() !== JSON_ERROR_NONE) throw new Exception("Invalid JSON payload.");
 
     // --- Extract and validate input ---
@@ -210,6 +215,46 @@ try {
 
     if (!$stmt->execute()) throw new Exception("Save failed: " . $stmt->error);
     $stmt->close();
+
+    if (!empty($attendees) && $workspace_title === "Video Conferencing") {
+
+        // Insert HOST
+        if (!empty($attendees['host'])) {
+            $host = $attendees['host'];
+
+            $stmtHost = $conn->prepare("
+            INSERT INTO booking_attendees 
+            (booking_id, employee_id, attendee_name, is_host)
+            VALUES (?, ?, ?, 1)
+        ");
+
+            $host_id = $host['id'] ?? null;
+            $host_name = $host['name'] ?? 'Host';
+
+            $stmtHost->bind_param("sis", $booking_id, $host_id, $host_name);
+            $stmtHost->execute();
+            $stmtHost->close();
+        }
+
+        // Insert EMPLOYEES
+        if (!empty($attendees['employees'])) {
+            $stmtEmp = $conn->prepare("
+            INSERT INTO booking_attendees 
+            (booking_id, employee_id, attendee_name, is_host)
+            VALUES (?, ?, ?, 0)
+        ");
+
+            foreach ($attendees['employees'] as $emp) {
+                $emp_id = $emp['id'];
+                $emp_name = $emp['employee_name'];
+
+                $stmtEmp->bind_param("sis", $booking_id, $emp_id, $emp_name);
+                $stmtEmp->execute();
+            }
+
+            $stmtEmp->close();
+        }
+    }
 
     if (!empty($payment_id)) {
         $update = $conn->prepare("UPDATE workspace_bookings SET status = 'confirmed' WHERE booking_id = ?");
