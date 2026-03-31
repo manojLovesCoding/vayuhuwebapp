@@ -51,26 +51,42 @@ try {
 
     // ---------------- FETCH RESERVATIONS ----------------
     $sql = "
-    SELECT 
-        wb.booking_id AS id,
-        u.name AS name,
-        u.phone AS mobile_no,
-        wb.workspace_title AS space,
-        s.space_code AS space_code,
-        wb.seat_codes AS seat_codes, 
-        wb.plan_type AS pack,
-        wb.start_date AS date,
-        wb.end_date AS end_date,
-        CONCAT(wb.start_time, ' - ', wb.end_time) AS timings,
-        wb.final_amount AS amount,
-        wb.discount_amount AS discount,
-        wb.final_amount AS final_total,
-        wb.created_at AS booked_on
-    FROM workspace_bookings wb
-    JOIN users u ON u.id = wb.user_id
-    JOIN spaces s ON s.id = wb.space_id
-    ORDER BY wb.created_at DESC
-    ";
+SELECT 
+    wb.booking_id AS id,
+    u.name AS name,
+    u.phone AS mobile_no,
+    wb.workspace_title AS space,
+    s.space_code AS space_code,
+    wb.seat_codes AS seat_codes, 
+    wb.plan_type AS pack,
+    wb.start_date AS date,
+    wb.end_date AS end_date,
+    CONCAT(wb.start_time, ' - ', wb.end_time) AS timings,
+    wb.final_amount AS amount,
+    wb.discount_amount AS discount,
+    wb.final_amount AS final_total,
+    wb.created_at AS booked_on,
+
+    -- ✅ NEW: Attendee names
+    GROUP_CONCAT(
+        CONCAT(
+            ba.attendee_name,
+            IF(ba.is_host = 1, ' (Host)', '')
+        ) SEPARATOR ', '
+    ) AS attendees
+
+FROM workspace_bookings wb
+JOIN users u ON u.id = wb.user_id
+JOIN spaces s ON s.id = wb.space_id
+
+-- ✅ JOIN attendees table
+LEFT JOIN booking_attendees ba 
+ON ba.booking_id COLLATE utf8mb4_unicode_ci = wb.booking_id COLLATE utf8mb4_unicode_ci
+
+GROUP BY wb.booking_id
+
+ORDER BY wb.created_at DESC
+";
 
     $result = $conn->query($sql);
 

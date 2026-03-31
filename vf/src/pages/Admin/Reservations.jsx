@@ -197,6 +197,7 @@ const Reservations = () => {
               <th className="border px-4 py-2">Space</th>
               <th className="border px-4 py-2">Code</th>
               <th className="border px-4 py-2 hidden lg:table-cell">Pack</th>
+              <th className="border px-4 py-2">Attendees</th>
               <th className="border px-4 py-2">Dates</th>
               <th className="border px-4 py-2">Time</th>
               <th className="border px-4 py-2 text-right">Amount</th>
@@ -221,6 +222,9 @@ const Reservations = () => {
                   <td className="border px-4 py-2">{res.space}</td>
                   <td className="border px-4 py-2">{res.seat_codes || res.space_code}</td>
                   <td className="border px-4 py-2 hidden lg:table-cell">{res.pack}</td>
+                  <td className="border px-4 py-2">
+                    {res.attendees || "-"}
+                  </td>
                   <td className="border px-4 py-2">
                     {res.date && res.end_date
                       ? `${formatDate(res.date)} - ${formatDate(res.end_date)}`
