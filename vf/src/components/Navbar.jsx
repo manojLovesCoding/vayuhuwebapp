@@ -141,10 +141,8 @@ const Navbar = () => {
       {/* ---------------- Coupon Banner ---------------- */}
       {coupon && showCoupon && (
         <div className="fixed top-0 left-0 w-full z-[60] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 text-sm font-semibold flex items-center justify-center text-center">
-          🎉 Apply coupon{" "}
-          <span className="underline mx-1">{coupon.coupon_code}</span>
-          and get <span className="font-bold mx-1">{coupon.discount}% OFF</span>
-          + ₹100 for Video Conferencing!
+          🎉 Unlock <span className="font-bold mx-1">{coupon.discount}% OFF</span>! Use code{" "}
+          <span className="underline mx-1">{coupon.coupon_code}</span> & get Video Conferencing for just ₹118!
           <button
             onClick={() => setShowCoupon(false)}
             className="ml-4 text-white/80 hover:text-white text-lg"
