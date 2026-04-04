@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios"; // ✅ Added Axios
@@ -69,24 +69,6 @@ const generateTimeOptions = () => {
   return times;
 };
 
-const generateMonthOptions = () => {
-  const options = [];
-  const today = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-    const label = d.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const value = `${year}-${month}-01`;
-    options.push({ value, label });
-  }
-  return options;
-};
-
-const MONTH_OPTIONS = generateMonthOptions();
 const TIME_OPTIONS = generateTimeOptions();
 
 const format24HourTo12Hour = (time24) => {
@@ -155,9 +137,7 @@ const getDayAbbreviation = (dateString) => {
 };
 
 const WorkspacePricing = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const selectedPlan = location.state?.plan;
 
   // workspaces from backend
   const [workspaces, setWorkspaces] = useState([]);
@@ -184,7 +164,7 @@ const WorkspacePricing = () => {
   const [codeSelectModal, setCodeSelectModal] = useState(null);
 
   const { cart, addToCart } = useCart(); // Ensure cart is destructured here
-  const [cartOpen, setCartOpen] = useState(false);
+ 
 
   // Add these to your WorkspacePricing states
   const [userEmployees, setUserEmployees] = useState([]);
@@ -262,7 +242,7 @@ const WorkspacePricing = () => {
         setError("Failed to load workspace data");
         setLoading(false);
       });
-  }, [API_BASE_URL]);
+  }, []);
 
   const groupedWorkspaces = useMemo(() => {
     const map = new Map();
@@ -409,7 +389,7 @@ const WorkspacePricing = () => {
         toast.error(errorMessage);
       }
     } catch (err) {
-      toast.error("Error validating coupon. Please try again.");
+      toast.error("Error validating coupon. Please try again.",err);
     }
   };
 
@@ -441,11 +421,7 @@ const WorkspacePricing = () => {
     return 0;
   };
 
-  const calculateTotal = () => {
-    const base = calculateBaseAmount();
-    const gst = base * 0.18;
-    return base + gst - discount;
-  };
+  
 
   const resetState = () => {
     setModalData(null);
@@ -696,7 +672,7 @@ const WorkspacePricing = () => {
       }
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error("Network error checking availability.");
+      toast.error("Network error checking availability.Please login agaian",err);
     }
   };
 

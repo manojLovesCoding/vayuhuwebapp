@@ -10,7 +10,6 @@ require_once __DIR__ . '/config/cors.php';
 // ------------------------------------
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-header("Content-Type: application/json; charset=UTF-8");
 
 // ------------------------------------
 // JWT VERIFICATION
