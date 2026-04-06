@@ -164,7 +164,7 @@ const WorkspacePricing = () => {
   const [codeSelectModal, setCodeSelectModal] = useState(null);
 
   const { cart, addToCart } = useCart(); // Ensure cart is destructured here
- 
+
 
   // Add these to your WorkspacePricing states
   const [userEmployees, setUserEmployees] = useState([]);
@@ -389,7 +389,7 @@ const WorkspacePricing = () => {
         toast.error(errorMessage);
       }
     } catch (err) {
-      toast.error("Error validating coupon. Please try again.",err);
+      toast.error("Error validating coupon. Please try again.", err);
     }
   };
 
@@ -421,7 +421,7 @@ const WorkspacePricing = () => {
     return 0;
   };
 
-  
+
 
   const resetState = () => {
     setModalData(null);
@@ -672,7 +672,7 @@ const WorkspacePricing = () => {
       }
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error("Network error checking availability.Please login agaian",err);
+      toast.error("Network error checking availability.Please login again", err);
     }
   };
 
@@ -1245,162 +1245,170 @@ const WorkspacePricing = () => {
                     Add to Cart
                   </button>
                   <button
-                    onClick={async () => {
-                      try {
-                        const availabilityResponse = await axios.post(
-                          `${API_BASE_URL}/check_workspace_availability.php`,
-                          {
-                            space_id: modalData.id,
-                            plan_type: modalData.planType.toLowerCase(),
-                            start_date: startDate,
-                            end_date: endDate || startDate,
-                            start_time: startTime,
-                            end_time: endTime,
-                            all_space_ids: modalData.allIds || [modalData.id]
-                          },
-                          { withCredentials: true }
-                        );
+  onClick={async () => {
+    try {
+      const availabilityResponse = await axios.post(
+        `${API_BASE_URL}/check_workspace_availability.php`,
+        {
+          space_id: modalData.id,
+          plan_type: modalData.planType.toLowerCase(),
+          start_date: startDate,
+          end_date: endDate || startDate,
+          start_time: startTime,
+          end_time: endTime,
+          all_space_ids: modalData.allIds || [modalData.id]
+        },
+        { withCredentials: true }
+      );
 
-                        if (!availabilityResponse.data.success) {
-                          toast.error(availabilityResponse.data.message);
-                          return;
-                        }
+      if (!availabilityResponse.data.success) {
+        toast.error(availabilityResponse.data.message);
+        return;
+      }
 
-                        const script = document.createElement("script");
-                        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
 
-                        script.onload = async () => {
-                          const userData = JSON.parse(localStorage.getItem("user"));
+      script.onload = async () => {
+        const userData = JSON.parse(localStorage.getItem("user"));
 
-                          const bookingData = {
-                            user_id: getUserId(),
-                            space_id: modalData.id,
-                            all_space_ids: modalData.allIds || [modalData.id],
-                            workspace_title: modalData.title,
-                            plan_type: modalData.planType,
-                            start_date: startDate,
-                            end_date: endDate,
-                            start_time: startTime || null,
-                            end_time: endTime || null,
-                            total_days: days,
-                            total_hours: totalHours,
-                            num_attendees: numAttendees,
-                            price_per_unit: modalData.price,
-                            base_amount: displayAmount,
-                            gst_amount: parseFloat(displayGst),
-                            discount_amount: discount,
-                            final_amount: parseFloat(finalTotal),
-                            coupon_code: coupon || null,
-                            referral_source: referral || null,
-                            terms_accepted: 1,
-                            seat_codes: modalData.selectedCodes,
+        // ✅ NEW: Prepare attendee names
+        const selectedEmployees = userEmployees
+          .filter(emp => selectedEmployeeIds.includes(emp.id))
+          .map(emp => emp.employee_name);
 
-                            attendees: {
-                              host: bookingUser,
-                              employees: userEmployees.filter(emp =>
-                                selectedEmployeeIds.includes(emp.id)
-                              )
-                            }
-                          };
+        const attendeeNamesArr = [
+          ...(numAttendees > selectedEmployeeIds.length ? [bookingUser?.name] : []), // Host
+          ...selectedEmployees
+        ];
 
-                          const orderRes = await axios.post(
-                            `${API_BASE_URL}/create_razorpay_order.php`,
-                            { amount: bookingData.final_amount },
-                            { withCredentials: true }
-                          );
+        const bookingData = {
+          user_id: getUserId(),
+          space_id: modalData.id,
+          all_space_ids: modalData.allIds || [modalData.id],
+          workspace_title: modalData.title,
+          plan_type: modalData.planType,
+          start_date: startDate,
+          end_date: endDate,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          total_days: days,
+          total_hours: totalHours,
+          num_attendees: numAttendees,
+          price_per_unit: modalData.price,
+          base_amount: displayAmount,
+          gst_amount: parseFloat(displayGst),
+          discount_amount: discount,
+          final_amount: parseFloat(finalTotal),
+          coupon_code: coupon || null,
+          referral_source: referral || null,
+          terms_accepted: 1,
+          seat_codes: modalData.selectedCodes,
 
-                          if (!orderRes.data.success) throw new Error(orderRes.data.message);
+          // ✅ ADD THIS LINE
+          attendee_names: attendeeNamesArr.join(", ")
+        };
 
-                          const options = {
-                            key: orderRes.data.key,
-                            amount: Math.round(bookingData.final_amount * 100),
-                            currency: "INR",
-                            name: "Vayuhu Workspaces",
-                            description: `${modalData.title} Booking`,
-                            order_id: orderRes.data.order_id,
+        const orderRes = await axios.post(
+          `${API_BASE_URL}/create_razorpay_order.php`,
+          { amount: bookingData.final_amount },
+          { withCredentials: true }
+        );
 
-                            // ✅ FIX: ADD PREFILL HERE
-                            prefill: {
-                              name: userData?.name || "",
-                              email: userData?.email || "",
-                              contact: userData?.phone || ""
-                            },
+        if (!orderRes.data.success) throw new Error(orderRes.data.message);
 
-                            handler: async (response) => {
-                              const verifyRes = await axios.post(
-                                `${API_BASE_URL}/verify_payment.php`,
-                                response,
-                                { withCredentials: true }
-                              );
+        const options = {
+          key: orderRes.data.key,
+          amount: Math.round(bookingData.final_amount * 100),
+          currency: "INR",
+          name: "Vayuhu Workspaces",
+          description: `${modalData.title} Booking`,
+          order_id: orderRes.data.order_id,
 
-                              if (verifyRes.data.success) {
-                                const finalBooking = await axios.post(
-                                  `${API_BASE_URL}/add_workspace_booking.php`,
-                                  {
-                                    ...bookingData,
-                                    payment_id: response.razorpay_payment_id
-                                  },
-                                  { withCredentials: true }
-                                );
+          prefill: {
+            name: userData?.name || "",
+            email: userData?.email || "",
+            contact: userData?.phone || ""
+          },
 
-                                if (finalBooking.data.success) {
-                                  toast.success("🎉 Booking confirmed!");
+          handler: async (response) => {
+            const verifyRes = await axios.post(
+              `${API_BASE_URL}/verify_payment.php`,
+              response,
+              { withCredentials: true }
+            );
 
-                                  const bookingId =
-                                    finalBooking.data.booking_id ||
-                                    finalBooking.data.id ||
-                                    0;
+            if (verifyRes.data.success) {
+              const finalBooking = await axios.post(
+                `${API_BASE_URL}/add_workspace_booking.php`,
+                {
+                  ...bookingData,
+                  payment_id: response.razorpay_payment_id
+                },
+                { withCredentials: true }
+              );
 
-                                  await axios.post(
-                                    `${API_BASE_URL}/send_booking_email.php`,
-                                    {
-                                      booking_id: bookingId,
-                                      workspace_title: modalData.title,
-                                      plan_type: modalData.planType,
-                                      start_date: startDate,
-                                      end_date: endDate,
-                                      start_time: startTime,
-                                      end_time: endTime,
-                                      num_attendees: numAttendees,
-                                      total_amount: Number(finalTotal).toFixed(2),
-                                      seat_codes: modalData.selectedCodes
-                                    },
-                                    { withCredentials: true }
-                                  );
+              if (finalBooking.data.success) {
+                toast.success("🎉 Booking confirmed!");
 
-                                  resetState();
+                const bookingId =
+                  finalBooking.data.booking_id ||
+                  finalBooking.data.id ||
+                  0;
 
-                                  setTimeout(() => {
-                                    navigate("/dashboard");
-                                  }, 200);
-                                } else {
-                                  toast.error(
-                                    finalBooking.data.message || "Booking failed"
-                                  );
-                                }
-                              } else {
-                                toast.error("Payment verification failed!");
-                              }
-                            },
+                await axios.post(
+                  `${API_BASE_URL}/send_booking_email.php`,
+                  {
+                    booking_id: bookingId,
+                    workspace_title: modalData.title,
+                    plan_type: modalData.planType,
+                    start_date: startDate,
+                    end_date: endDate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    num_attendees: numAttendees,
+                    total_amount: Number(finalTotal).toFixed(2),
+                    seat_codes: modalData.selectedCodes,
 
-                            theme: { color: "#F97316" }
-                          };
+                    // ✅ OPTIONAL: send in email also
+                    attendee_names: attendeeNamesArr.join(", ")
+                  },
+                  { withCredentials: true }
+                );
 
-                          new window.Razorpay(options).open();
-                        };
+                resetState();
 
-                        document.body.appendChild(script);
-                      } catch (err) {
-                        toast.error(
-                          "Process failed: " +
-                          (err.response?.data?.message || err.message)
-                        );
-                      }
-                    }}
-                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-                  >
-                    Pay & Book »
-                  </button>
+                setTimeout(() => {
+                  navigate("/dashboard");
+                }, 200);
+              } else {
+                toast.error(
+                  finalBooking.data.message || "Booking failed"
+                );
+              }
+            } else {
+              toast.error("Payment verification failed!");
+            }
+          },
+
+          theme: { color: "#F97316" }
+        };
+
+        new window.Razorpay(options).open();
+      };
+
+      document.body.appendChild(script);
+    } catch (err) {
+      toast.error(
+        "Process failed: " +
+        (err.response?.data?.message || err.message)
+      );
+    }
+  }}
+  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+>
+  Pay & Book »
+</button>
                 </div>
               </motion.div>
             )}

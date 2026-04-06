@@ -105,7 +105,7 @@ try {
         $item_coupon     = $booking['coupon_code'] ?? '';
         $booking_ref     = $booking['booking_id'] ?? '';
         $num_attendees   = (int)($booking['num_attendees'] ?? 1);
-
+$attendees = $booking['attendee_names'] ?? '';
         $grand_total += $item_amount;
 
         $body .= "<table class='table'>
@@ -114,6 +114,7 @@ try {
             . "<tr><th>Plan Type</th><td>{$plan_type}</td></tr>"
             . (!empty($seat_codes) ? "<tr><th>Seat / Room Code</th><td><strong>{$seat_codes}</strong></td></tr>" : "")
             . ($workspace_title === "Video Conferencing" ? "<tr><th>Total Attendees</th><td><span class='highlight'>{$num_attendees} Person(s)</span></td></tr>" : "")
+            . (!empty($attendees) ? "<tr><th>Attendees</th><td>{$attendees}</td></tr>" : "")
             . "<tr><th>Start Date</th><td>{$start_date}</td></tr>"
             . "<tr><th>End Date</th><td>{$end_date}</td></tr>"
             . (!empty($start_time) ? "<tr><th>Scheduled Time</th><td>{$start_time} - {$end_time}</td></tr>" : "")
