@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import "react-toastify/dist/ReactToastify.css";
@@ -156,6 +156,7 @@ const Reservations = () => {
               </div>
 
               <div className="text-sm space-y-1">
+                <p><b>Attendees:</b> {res.attendee_names || "-"}</p>
                 <p><b>Mobile:</b> {res.mobile_no}</p>
                 <p><b>Space:</b> {res.space}</p>
                 <p><b>Code:</b> {res.seat_codes || res.space_code}</p>
@@ -197,8 +198,8 @@ const Reservations = () => {
               <th className="border px-4 py-2">Space</th>
               <th className="border px-4 py-2">Code</th>
               <th className="border px-4 py-2 hidden lg:table-cell">Pack</th>
-              <th className="border px-4 py-2">Attendees</th>
-              <th className="border px-4 py-2">Dates</th>
+<th className="border px-4 py-2">Attendees</th>              
+<th className="border px-4 py-2">Dates</th>
               <th className="border px-4 py-2">Time</th>
               <th className="border px-4 py-2 text-right">Amount</th>
               <th className="border px-4 py-2 hidden lg:table-cell text-green-600 text-right">
@@ -223,8 +224,8 @@ const Reservations = () => {
                   <td className="border px-4 py-2">{res.seat_codes || res.space_code}</td>
                   <td className="border px-4 py-2 hidden lg:table-cell">{res.pack}</td>
                   <td className="border px-4 py-2">
-                    {res.attendees || "-"}
-                  </td>
+  {res.attendee_names || "-"}
+</td>
                   <td className="border px-4 py-2">
                     {res.date && res.end_date
                       ? `${formatDate(res.date)} - ${formatDate(res.end_date)}`
