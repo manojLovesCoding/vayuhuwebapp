@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ToastContainer, toast } from "react-toastify";
@@ -107,7 +107,7 @@ const Visitors = () => {
     return subtotal + gst;
   }, [selectedBookingData, formData.attendees, hours]);
 
-  // ---------------- FETCH ACTIVE BOOKINGS ----------------
+  // FETCH ACTIVE BOOKINGS
   useEffect(() => {
     if (!userId) return;
 
@@ -116,7 +116,7 @@ const Visitors = () => {
         const response = await axios.post(
           `${API_BASE}/get_active_bookings.php`,
           { user_id: userId },
-          { withCredentials: true } // ✅ Send HttpOnly cookie
+          { withCredentials: true }
         );
 
         if (response.data.success) {
@@ -131,14 +131,14 @@ const Visitors = () => {
     fetchActiveReservations();
   }, [userId, API_BASE]);
 
-  // ---------------- FETCH COMPANY PROFILE ----------------
+  // FETCH COMPANY PROFILE
   useEffect(() => {
     if (!userId) return;
 
     axios
       .get(`${API_BASE}/get_company_profile.php`, {
         params: { user_id: userId },
-        withCredentials: true, // ✅ Send HttpOnly cookie
+        withCredentials: true,
       })
       .then((res) => {
         const data = res.data;
@@ -154,7 +154,6 @@ const Visitors = () => {
       .catch(() => toast.error("Error fetching company name"));
   }, [userId, API_BASE]);
 
-  // ---------------- HANDLE BOOKING CHANGE ----------------
   const handleBookingChange = (e) => {
     const bookingId = e.target.value;
 
@@ -168,13 +167,12 @@ const Visitors = () => {
     }));
   };
 
-  // ---------------- HANDLE FORM INPUT CHANGE ----------------
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ---------------- HANDLE FORM SUBMIT ----------------
+  // HANDLE SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -193,7 +191,17 @@ const Visitors = () => {
       return;
     }
 
-    // ---------------- BACKEND DATE VALIDATION ----------------
+    // ✅ NEW VALIDATION ADDED HERE
+    if (!formData.companyName) {
+  toast.error("No company profile found for this user");
+
+  setTimeout(() => {
+    navigate("/company-profile");
+  }, 1500);
+
+  return;
+}
+
     try {
       const validateRes = await axios.post(
         `${API_BASE}/validate_visitor_date.php`,
@@ -202,7 +210,7 @@ const Visitors = () => {
           booking_id: selectedBooking,
           visitingDate: formData.visitingDate,
         },
-        { withCredentials: true } // ✅ Send HttpOnly cookie
+        { withCredentials: true }
       );
 
       if (!validateRes.data.success) {
@@ -228,14 +236,13 @@ const Visitors = () => {
       }
     }
 
-    // ---------------- PAYMENT ----------------
     const toastId = toast.loading("Initializing payment...");
 
     try {
       const orderRes = await axios.post(
         `${API_BASE}/create_visitor_payment_order.php`,
         { amount: guestFee },
-        { withCredentials: true } // ✅ Send HttpOnly cookie
+        { withCredentials: true }
       );
 
       if (!orderRes.data.success) {
@@ -251,7 +258,6 @@ const Visitors = () => {
         order_id: orderRes.data.order_id,
 
         handler: async (response) => {
-          console.log("RAZORPAY RESPONSE:", response);
           toast.update(toastId, {
             render: "Verifying payment...",
             type: "info",
@@ -262,7 +268,7 @@ const Visitors = () => {
             const verifyRes = await axios.post(
               `${API_BASE}/verify_visitor_payment.php`,
               response,
-              { withCredentials: true } // ✅ Send HttpOnly cookie
+              { withCredentials: true }
             );
 
             if (!verifyRes.data.success) {
@@ -281,7 +287,7 @@ const Visitors = () => {
               {
                 withCredentials: true,
                 headers: {
-                  "Content-Type": "application/json", // ✅ MUST
+                  "Content-Type": "application/json",
                 },
               }
             );
