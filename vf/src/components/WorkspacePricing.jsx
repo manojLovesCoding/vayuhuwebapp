@@ -492,7 +492,7 @@ const WorkspacePricing = () => {
       const now = new Date();
       now.setHours(now.getHours() + (now.getMinutes() > 0 ? 1 : 0), 0, 0, 0);
       const h = now.getHours();
-      setStartTime(`${h.toString().padStart(2, "0")}:00`);
+      setStartTime("");
       const nextHour = Math.min(19, h + 1);
       setEndTime(`${nextHour.toString().padStart(2, "0")}:59`);
     } else {
