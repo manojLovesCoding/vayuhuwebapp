@@ -216,9 +216,7 @@ const WorkspacePricing = () => {
       .then((response) => {
         const data = response.data;
         if (data.success) {
-          const formatted = data.spaces
-            .filter((i) => i.status === "Active")
-            .map((i) => ({
+          const formatted = data.spaces.map((i) => ({
               id: i.id,
               title: i.space,
               desc: i.min_duration_desc || "",
@@ -247,19 +245,19 @@ const WorkspacePricing = () => {
   const groupedWorkspaces = useMemo(() => {
     const map = new Map();
     workspaces.forEach((w) => {
-      const key = `${w.title}||${w.hourly ?? 0}||${w.daily ?? 0}||${w.monthly ?? 0
-        }`;
+      const key = `${w.title}||${w.hourly ?? 0}||${w.daily ?? 0}||${w.monthly ?? 0}`;
       if (!map.has(key)) {
-        map.set(key, {
-          title: w.title,
-          desc: w.desc,
-          image: w.image,
-          hourly: w.hourly,
-          daily: w.daily,
-          monthly: w.monthly,
-          items: [{ id: w.id, code: w.type, raw: w.raw }],
-          capacity: w.capacity,
-        });
+       map.set(key, {
+  title: w.title,
+  desc: w.desc,
+  image: w.image,
+  hourly: w.hourly,
+  daily: w.daily,
+  monthly: w.monthly,
+  status: w.status,   // ✅ ADD THIS
+  items: [{ id: w.id, code: w.type, raw: w.raw }],
+  capacity: w.capacity,
+});
       } else {
         map.get(key).items.push({ id: w.id, code: w.type, raw: w.raw });
       }
@@ -828,33 +826,42 @@ const WorkspacePricing = () => {
                 <div className="flex flex-wrap gap-3">
                   {group.hourly && (
                     <button
-                      onClick={() => handlePlanClick(group, "hourly")}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold
-                           bg-orange-500 text-white hover:bg-orange-600
-                           shadow-lg transition"
-                    >
-                      Hourly ₹{group.hourly}
-                    </button>
+  disabled={group.status !== "Active"}
+  onClick={() => handlePlanClick(group, "hourly")}
+  className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+    ${group.status !== "Active"
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : "bg-orange-500 text-white hover:bg-orange-600 shadow-lg"
+    }`}
+>
+  Hourly ₹{group.hourly}
+</button>
                   )}
                   {group.daily && (
                     <button
-                      onClick={() => handlePlanClick(group, "daily")}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold
-                           bg-white/90 text-gray-900 hover:bg-white
-                           transition"
-                    >
-                      Daily ₹{group.daily}
-                    </button>
+  disabled={group.status !== "Active"}
+  onClick={() => handlePlanClick(group, "daily")}
+  className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+    ${group.status !== "Active"
+      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+      : "bg-white/90 text-gray-900 hover:bg-white"
+    }`}
+>
+  Daily ₹{group.daily}
+</button>
                   )}
                   {group.monthly && (
-                    <button
-                      onClick={() => handlePlanClick(group, "monthly")}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold
-                           bg-black/70 text-white border border-white/20
-                           hover:bg-black/90 transition"
-                    >
-                      Monthly ₹{group.monthly}
-                    </button>
+                   <button
+  disabled={group.status !== "Active"}
+  onClick={() => handlePlanClick(group, "monthly")}
+  className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+    ${group.status !== "Active"
+      ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+      : "bg-black/70 text-white hover:bg-black/90"
+    }`}
+>
+  Monthly ₹{group.monthly}
+</button>
                   )}
                 </div>
               </div>

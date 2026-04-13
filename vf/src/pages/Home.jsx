@@ -1,9 +1,7 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import About from "../components/About";
-import Projects from "../components/Projects";
 import Testimonials from "../components/Testimonails";
-import Team from "../components/Team";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 import WorkspacePricing from "../components/WorkspacePricing";

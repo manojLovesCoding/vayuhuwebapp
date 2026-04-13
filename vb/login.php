@@ -65,17 +65,18 @@ unset($user["password"]); // remove password from response
 
 // --- Create JWT payload ---
 $payload = [
-    "iss" => "http://localhost/vayuhu_backend",
+    "iss" => "http://localhost/vb",
     "aud" => "http://localhost:5173",
     "iat" => time(),
     "nbf" => time(),
     "exp" => time() + (60 * 60 * 24), // 24 hours
+    //"exp" => time() + (2 * 60), // 2 minutes
     "data" => [
         "id" => $user["id"],
         "name" => $user["name"],
         "email" => $user["email"]
     ]
-];
+];;
 
 // --- Generate JWT ---
 $jwt = JWT::encode($payload, $secret_key, 'HS256');
@@ -86,8 +87,9 @@ setcookie(
     $jwt,
     [
         "expires"  => time() + (60 * 60 * 24),
+        //"expires"  => time() + (2 * 60), // 2 minutes
         "path"     => "/",
-        "secure"   => true, // ⚠️ set to TRUE in HTTPS
+        "secure"   => true,
         "httponly" => true,
         "samesite" => "Lax"
     ]
